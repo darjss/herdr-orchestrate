@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 //#region \0rolldown/runtime.js
@@ -142,32 +143,43 @@ async function startRun(input) {
 	const workspace = await run("herdr", [
 		"workspace",
 		"create",
+		"--cwd",
+		repoRoot,
 		"--label",
 		`${repoRoot.split("/").filter(Boolean).at(-1)}-orchestrate`,
 		"--no-focus"
 	]);
-	const workspaceId = JSON.parse(workspace.stdout).result?.workspace?.workspace_id;
-	if (typeof workspaceId !== "string") throw new Error("Herdr did not return the orchestration workspace ID.");
+	const workspaceResult = JSON.parse(workspace.stdout);
+	const workspaceId = workspaceResult.result?.workspace?.workspace_id;
+	const rootPaneId = workspaceResult.result?.root_pane?.pane_id;
+	const rootTabId = workspaceResult.result?.root_pane?.tab_id;
+	if (typeof workspaceId !== "string" || typeof rootPaneId !== "string" || typeof rootTabId !== "string") throw new Error("Herdr did not return the orchestration workspace, tab, and pane IDs.");
 	state.herdrWorkspaceId = workspaceId;
+	state.boardPaneId = rootPaneId;
 	await saveRun(state);
-	const pane = await run("herdr", [
-		"plugin",
-		"pane",
-		"open",
-		"--plugin",
-		"darjss.herdr-orchestrate",
-		"--entrypoint",
-		"board",
-		"--placement",
+	const boardEntrypoint = fileURLToPath(new URL("./plugin-pane.mjs", import.meta.url));
+	const boardCommand = `exec env ORCH_REPO_ROOT=${JSON.stringify(repoRoot)} ${JSON.stringify(process.execPath)} ${JSON.stringify(boardEntrypoint)} board`;
+	await run("herdr", [
 		"tab",
-		"--workspace",
-		workspaceId,
-		"--cwd",
-		repoRoot,
-		"--no-focus"
+		"rename",
+		rootTabId,
+		"orch board"
 	]);
-	state.boardPaneId = JSON.parse(pane.stdout).result?.plugin_pane?.pane?.pane_id;
-	await saveRun(state);
+	await run("herdr", [
+		"pane",
+		"run",
+		rootPaneId,
+		boardCommand
+	]);
+	await run("herdr", [
+		"wait",
+		"output",
+		rootPaneId,
+		"--match",
+		"# orch board",
+		"--timeout",
+		"10000"
+	]);
 	return state;
 }
 async function spawnWorker(input) {
@@ -270,8 +282,11 @@ async function sendWorker(input) {
 	const destination = join(runRoot(state.repoRoot, state.id), "prompts", `${input.id}-pass-${pass}.md`);
 	await writeFile(destination, workerPrompt(input.promptPath ? await readFile(resolve(input.promptPath), "utf8") : input.text ?? "", worker.reportPath));
 	try {
-		if (!worker.paneId) throw new Error(`Worker '${worker.id}' has no pane ID.`);
-		await deliver(worker.paneId, destination);
+		const pane = await findWorkerPane(state, worker);
+		if (!pane) throw new Error(`Worker '${worker.id}' has no live pane.`);
+		worker.paneId = pane.pane_id;
+		worker.tabId = pane.tab_id;
+		await deliver(pane.pane_id, destination);
 		worker.promptPaths.push(destination);
 		worker.status = "working";
 		worker.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -389,15 +404,25 @@ async function doctor(cwd) {
 	}
 	return outcomes;
 }
+async function workspacePanes(state) {
+	if (!state.herdrWorkspaceId) return [];
+	const response = await run("herdr", [
+		"pane",
+		"list",
+		"--workspace",
+		state.herdrWorkspaceId
+	]);
+	const panes = JSON.parse(response.stdout).result?.panes;
+	return Array.isArray(panes) ? panes : [];
+}
+async function findWorkerPane(state, worker) {
+	return (await workspacePanes(state)).find((pane) => pane.foreground_cwd === worker.worktreePath || pane.cwd === worker.worktreePath);
+}
 async function reconcileRun(repoRoot, runId) {
 	const state = await loadRun(repoRoot, runId);
-	for (const worker of Object.values(state.workers)) try {
-		const response = await run("herdr", [
-			"agent",
-			"get",
-			worker.agentName
-		]);
-		const status = JSON.parse(response.stdout).result?.agent?.agent_status;
+	const panes = await workspacePanes(state);
+	for (const worker of Object.values(state.workers)) {
+		const pane = panes.find((candidate) => candidate.foreground_cwd === worker.worktreePath || candidate.cwd === worker.worktreePath);
 		const report = await readFile(worker.reportPath, "utf8").catch(() => null);
 		if (report?.includes("orch-verdict: blocked")) {
 			worker.status = "blocked";
@@ -405,11 +430,14 @@ async function reconcileRun(repoRoot, runId) {
 		} else if (report?.includes("orch-verdict: done")) {
 			worker.status = "done";
 			worker.verdict = "done";
-		} else if (status === "blocked") worker.status = "blocked";
-		else if (status === "working") worker.status = "working";
-		worker.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
-	} catch {
-		worker.status = "failed";
+		} else if (!pane) worker.status = "failed";
+		else {
+			worker.paneId = pane.pane_id;
+			worker.tabId = pane.tab_id;
+			if (pane.agent_status === "blocked") worker.status = "blocked";
+			else if (pane.agent_status === "working") worker.status = "working";
+			else if (pane.agent_status === "done") worker.status = "done";
+		}
 		worker.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
 	}
 	await saveRun(state);
@@ -424,24 +452,12 @@ async function cleanupRun(input) {
 		if (!input.apply) continue;
 		if (!input.force && (worker.status === "working" || worker.status === "launching")) throw new Error(`Refusing to clean active worker '${worker.id}' without --force.`);
 		try {
-			if (worker.tabId) await run("herdr", [
+			const pane = await findWorkerPane(state, worker);
+			if (pane) await run("herdr", [
 				"tab",
 				"close",
-				worker.tabId
+				pane.tab_id
 			]);
-			else {
-				const response = await run("herdr", [
-					"agent",
-					"get",
-					worker.agentName
-				]);
-				const tabId = JSON.parse(response.stdout).result?.agent?.tab_id;
-				if (typeof tabId === "string") await run("herdr", [
-					"tab",
-					"close",
-					tabId
-				]);
-			}
 		} catch {}
 		try {
 			await run("git", [
