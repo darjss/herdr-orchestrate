@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { existsSync } from "node:fs";
 import {
   board,
   doctor,
@@ -19,6 +20,30 @@ function usage(): never {
   orch board [--run RUN]`);
 }
 
+function invocationCwd(): string {
+  try {
+    const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const pane = context.pane as Record<string, unknown> | undefined;
+    const worktree = context.worktree as Record<string, unknown> | undefined;
+    for (const value of [
+      context.focused_pane_cwd,
+      pane?.foreground_cwd,
+      pane?.cwd,
+      worktree?.path,
+      context.workspace_cwd,
+      context.cwd,
+    ]) {
+      if (typeof value === "string" && existsSync(value)) return value;
+    }
+  } catch {
+    // Direct CLI use has no plugin context.
+  }
+  return process.cwd();
+}
+
 function option(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
   if (index < 0) return undefined;
@@ -29,7 +54,7 @@ function option(args: string[], name: string): string | undefined {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const cwd = process.cwd();
+  const cwd = invocationCwd();
   if (args[0] === "doctor") {
     console.log((await doctor(cwd)).join("\n"));
     return;

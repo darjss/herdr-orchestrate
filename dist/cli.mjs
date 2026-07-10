@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { a as sendWorker, i as reconcileRun, l as loadRun, n as doctor, o as spawnWorker, r as latestRun, s as startRun, t as board } from "./orch-BmbBAVXa.mjs";
+import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
 	throw new Error(`Usage:
@@ -8,6 +9,22 @@ function usage() {
   orch worker spawn <id> --route default|explore --prompt FILE --run RUN
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch board [--run RUN]`);
+}
+function invocationCwd() {
+	try {
+		const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}");
+		const pane = context.pane;
+		const worktree = context.worktree;
+		for (const value of [
+			context.focused_pane_cwd,
+			pane?.foreground_cwd,
+			pane?.cwd,
+			worktree?.path,
+			context.workspace_cwd,
+			context.cwd
+		]) if (typeof value === "string" && existsSync(value)) return value;
+	} catch {}
+	return process.cwd();
 }
 function option(args, name) {
 	const index = args.indexOf(name);
@@ -18,7 +35,7 @@ function option(args, name) {
 }
 async function main() {
 	const args = process.argv.slice(2);
-	const cwd = process.cwd();
+	const cwd = invocationCwd();
 	if (args[0] === "doctor") {
 		console.log((await doctor(cwd)).join("\n"));
 		return;
