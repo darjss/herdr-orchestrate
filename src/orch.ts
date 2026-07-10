@@ -192,33 +192,39 @@ function workerPrompt(prompt: string, reportPath: string): string {
   return `${prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`;
 }
 
-async function deliver(agentName: string, promptPath: string): Promise<void> {
+async function deliver(paneId: string, promptPath: string): Promise<void> {
   const text = await readFile(promptPath, "utf8");
   try {
-    await run("herdr", ["agent", "wait", agentName, "--status", "idle", "--timeout", "10000"]);
+    await run("herdr", ["wait", "agent-status", paneId, "--status", "idle", "--timeout", "10000"]);
   } catch {
     /* A working agent can accept a follow-up; delivery acknowledgement below is authoritative. */
   }
-  const paneId = await agentPaneId(agentName);
   await run("herdr", ["pane", "send-text", paneId, text]);
   await run("herdr", ["pane", "send-keys", paneId, "Enter"]);
   try {
-    await run("herdr", ["agent", "wait", agentName, "--status", "working", "--timeout", "10000"]);
+    await run("herdr", [
+      "wait",
+      "agent-status",
+      paneId,
+      "--status",
+      "working",
+      "--timeout",
+      "10000",
+    ]);
   } catch {
     await run("herdr", ["pane", "send-keys", paneId, "Escape", "Enter"]);
     await run("herdr", ["pane", "send-text", paneId, text]);
     await run("herdr", ["pane", "send-keys", paneId, "Enter"]);
-    await run("herdr", ["agent", "wait", agentName, "--status", "working", "--timeout", "10000"]);
+    await run("herdr", [
+      "wait",
+      "agent-status",
+      paneId,
+      "--status",
+      "working",
+      "--timeout",
+      "10000",
+    ]);
   }
-}
-
-async function agentPaneId(agentName: string): Promise<string> {
-  const result = await run("herdr", ["agent", "get", agentName]);
-  const paneId = (JSON.parse(result.stdout) as { result?: { agent?: { pane_id?: unknown } } })
-    .result?.agent?.pane_id;
-  if (typeof paneId !== "string")
-    throw new Error(`Herdr did not return a pane ID for ${agentName}.`);
-  return paneId;
 }
 
 export async function doctor(cwd: string): Promise<string[]> {
