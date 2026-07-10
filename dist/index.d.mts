@@ -36,6 +36,8 @@ interface RunState {
   createdAt: string;
   updatedAt: string;
   userMergeApprovedAt: string | null;
+  herdrWorkspaceId: string | null;
+  boardPaneId: string | null;
   workers: Record<string, Worker>;
 }
 //#endregion

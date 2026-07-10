@@ -28,7 +28,37 @@ export async function startRun(input: {
   const baseRef =
     input.baseRef ??
     (await run("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], repoRoot)).stdout.trim();
-  return createRun({ repoRoot, goal: input.goal, size: input.size, baseRef });
+  const state = await createRun({ repoRoot, goal: input.goal, size: input.size, baseRef });
+  const label = `${repoRoot.split("/").filter(Boolean).at(-1)}-orchestrate`;
+  const workspace = await run("herdr", ["workspace", "create", "--label", label, "--no-focus"]);
+  const workspaceId = (
+    JSON.parse(workspace.stdout) as { result?: { workspace?: { workspace_id?: unknown } } }
+  ).result?.workspace?.workspace_id;
+  if (typeof workspaceId !== "string")
+    throw new Error("Herdr did not return the orchestration workspace ID.");
+  state.herdrWorkspaceId = workspaceId;
+  await saveRun(state);
+  const pane = await run("herdr", [
+    "plugin",
+    "pane",
+    "open",
+    "--plugin",
+    "darjss.herdr-orchestrate",
+    "--entrypoint",
+    "board",
+    "--placement",
+    "tab",
+    "--workspace",
+    workspaceId,
+    "--cwd",
+    repoRoot,
+    "--no-focus",
+  ]);
+  state.boardPaneId = (
+    JSON.parse(pane.stdout) as { result?: { plugin_pane?: { pane?: { pane_id?: unknown } } } }
+  ).result?.plugin_pane?.pane?.pane_id as string | null;
+  await saveRun(state);
+  return state;
 }
 
 export async function spawnWorker(input: {
@@ -83,6 +113,7 @@ export async function spawnWorker(input: {
       agentName,
       "--cwd",
       worktreePath,
+      ...(state.herdrWorkspaceId ? ["--workspace", state.herdrWorkspaceId] : []),
       "--no-focus",
       "--",
       "pi",

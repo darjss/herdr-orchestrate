@@ -72,6 +72,8 @@ async function createRun(input, env = process.env) {
 		createdAt: now,
 		updatedAt: now,
 		userMergeApprovedAt: null,
+		herdrWorkspaceId: null,
+		boardPaneId: null,
 		workers: {}
 	};
 	const root = runRoot(input.repoRoot, id, env);
@@ -108,12 +110,42 @@ async function startRun(input) {
 		"--short",
 		"HEAD"
 	], repoRoot)).stdout.trim();
-	return createRun({
+	const state = await createRun({
 		repoRoot,
 		goal: input.goal,
 		size: input.size,
 		baseRef
 	});
+	const workspace = await run("herdr", [
+		"workspace",
+		"create",
+		"--label",
+		`${repoRoot.split("/").filter(Boolean).at(-1)}-orchestrate`,
+		"--no-focus"
+	]);
+	const workspaceId = JSON.parse(workspace.stdout).result?.workspace?.workspace_id;
+	if (typeof workspaceId !== "string") throw new Error("Herdr did not return the orchestration workspace ID.");
+	state.herdrWorkspaceId = workspaceId;
+	await saveRun(state);
+	const pane = await run("herdr", [
+		"plugin",
+		"pane",
+		"open",
+		"--plugin",
+		"darjss.herdr-orchestrate",
+		"--entrypoint",
+		"board",
+		"--placement",
+		"tab",
+		"--workspace",
+		workspaceId,
+		"--cwd",
+		repoRoot,
+		"--no-focus"
+	]);
+	state.boardPaneId = JSON.parse(pane.stdout).result?.plugin_pane?.pane?.pane_id;
+	await saveRun(state);
+	return state;
 }
 async function spawnWorker(input) {
 	const state = await loadRun(input.repoRoot, input.runId);
@@ -167,6 +199,7 @@ async function spawnWorker(input) {
 			agentName,
 			"--cwd",
 			worktreePath,
+			...state.herdrWorkspaceId ? ["--workspace", state.herdrWorkspaceId] : [],
 			"--no-focus",
 			"--",
 			"pi",

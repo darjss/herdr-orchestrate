@@ -59,6 +59,8 @@ export interface RunState {
   createdAt: string;
   updatedAt: string;
   userMergeApprovedAt: string | null;
+  herdrWorkspaceId: string | null;
+  boardPaneId: string | null;
   workers: Record<string, Worker>;
 }
 
@@ -98,6 +100,8 @@ export async function createRun(
     createdAt: now,
     updatedAt: now,
     userMergeApprovedAt: null,
+    herdrWorkspaceId: null,
+    boardPaneId: null,
     workers: {},
   };
   const root = runRoot(input.repoRoot, id, env);
