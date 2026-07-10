@@ -1,16 +1,16 @@
 {
   "name": "herdr-orchestrate",
   "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "homepage": "https://github.com/author/library#readme",
+  "description": "Pi-native orchestration for visible Herdr worker sessions.",
+  "homepage": "https://github.com/darjss/herdr-orchestrate#readme",
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/darjss/herdr-orchestrate/issues"
   },
   "license": "MIT",
-  "author": "Author Name <author.name@mail.com>",
+  "author": "darjss",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/darjss/herdr-orchestrate.git"
   },
   "files": [
     "dist"

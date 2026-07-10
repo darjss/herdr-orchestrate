@@ -1,23 +1,17 @@
-# vite-plus-starter
+# herdr-orchestrate
 
-A starter for creating a Vite Plus project.
+Pi-native orchestration for visible [Herdr](https://herdr.dev) worker sessions.
+
+`herdr-orchestrate` will provide a Herdr plugin, a durable run board, and Pi-only workers routed to explicit providers, models, and reasoning levels.
+
+## Status
+
+Bootstrap only. The first implementation milestone establishes versioned run state, Pi worker launching, and a read-only Herdr board.
 
 ## Development
 
-- Install dependencies:
-
 ```bash
 vp install
-```
-
-- Run the unit tests:
-
-```bash
-vp test
-```
-
-- Build the library:
-
-```bash
+vp check
 vp pack
 ```
