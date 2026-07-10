@@ -17,6 +17,12 @@ title = "orch: status"
 contexts = ["workspace", "tab", "pane"]
 command = ["node", "dist/cli.mjs", "board"]
 
+[[actions]]
+id = "reconcile"
+title = "orch: reconcile"
+contexts = ["workspace", "tab", "pane"]
+command = ["node", "dist/cli.mjs", "board"]
+
 [[panes]]
 id = "board"
 title = "orch board"
