@@ -1,11 +1,28 @@
 #!/usr/bin/env node
 import { a as reconcileRun, c as startRun, r as latestRun, t as board } from "./orch-D1Vjr1m1.mjs";
+import { existsSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 //#region src/plugin-pane.ts
+function boardRepositoryRoot() {
+	if (process.env.ORCH_REPO_ROOT) return process.env.ORCH_REPO_ROOT;
+	try {
+		const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}");
+		const pane = context.pane;
+		const worktree = context.worktree;
+		for (const value of [
+			context.focused_pane_cwd,
+			pane?.foreground_cwd,
+			pane?.cwd,
+			worktree?.path,
+			context.workspace_cwd,
+			context.cwd
+		]) if (typeof value === "string" && existsSync(value)) return value;
+	} catch {}
+	throw new Error("Board pane has no target repository.");
+}
 async function renderBoard() {
-	const repoRoot = process.env.ORCH_REPO_ROOT;
-	if (!repoRoot) throw new Error("Board pane has no target repository.");
+	const repoRoot = boardRepositoryRoot();
 	for (;;) {
 		const state = await latestRun(repoRoot);
 		stdout.write("\x1B[2J\x1B[H");
