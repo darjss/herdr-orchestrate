@@ -1,0 +1,30 @@
+id = "darjss.herdr-orchestrate"
+name = "herdr-orchestrate"
+version = "0.1.0"
+min_herdr_version = "0.7.1"
+description = "Pi-native orchestration for visible Herdr worker sessions."
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "doctor"
+title = "orch: doctor"
+contexts = ["workspace", "tab", "pane"]
+command = ["node", "dist/cli.mjs", "doctor"]
+
+[[actions]]
+id = "status"
+title = "orch: status"
+contexts = ["workspace", "tab", "pane"]
+command = ["node", "dist/cli.mjs", "board"]
+
+[[panes]]
+id = "board"
+title = "orch board"
+placement = "split"
+command = ["node", "dist/plugin-pane.mjs", "board"]
+
+[[panes]]
+id = "run-wizard"
+title = "orch run wizard"
+placement = "overlay"
+command = ["node", "dist/plugin-pane.mjs", "run-wizard"]
