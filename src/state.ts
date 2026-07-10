@@ -67,7 +67,7 @@ export function projectKey(repoRoot: string): string {
 }
 
 export function stateRoot(env = process.env): string {
-  return env.HERDR_PLUGIN_STATE_DIR ?? resolve(env.HOME ?? ".", ".local/share/herdr-orchestrate");
+  return env.ORCH_STATE_DIR ?? resolve(env.HOME ?? ".", ".local/share/herdr-orchestrate");
 }
 
 export function projectRoot(repoRoot: string, env = process.env): string {
