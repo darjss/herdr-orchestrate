@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-3LuJn9Wz.mjs";
+import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-D1Vjr1m1.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
 	throw new Error(`Usage:
   orch doctor
   orch run start <goal> [--size trivial|normal|complex] [--base REF]
-  orch worker spawn <id> --route default|explore --prompt FILE --run RUN
+  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
   orch cleanup [--run RUN] [--apply] [--force]
@@ -71,7 +71,8 @@ async function main() {
 			runId,
 			id,
 			route,
-			prompt
+			prompt,
+			baseRef: option(args, "--base")
 		});
 		console.log(`Started ${worker.id} as ${worker.model.provider}/${worker.model.model}`);
 		return;
@@ -114,7 +115,7 @@ async function main() {
 		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-3LuJn9Wz.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-D1Vjr1m1.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({

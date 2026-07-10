@@ -56,6 +56,7 @@ declare function spawnWorker(input: {
   id: string;
   route: Route;
   prompt: string;
+  baseRef?: string;
 }): Promise<Worker>;
 declare function sendWorker(input: {
   repoRoot: string;

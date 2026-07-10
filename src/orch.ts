@@ -80,6 +80,7 @@ export async function spawnWorker(input: {
   id: string;
   route: Route;
   prompt: string;
+  baseRef?: string;
 }): Promise<Worker> {
   const state = await loadRun(input.repoRoot, input.runId);
   if (state.workers[input.id]) throw new Error(`Worker '${input.id}' already exists.`);
@@ -89,16 +90,13 @@ export async function spawnWorker(input: {
   const promptPath = join(root, "prompts", `${input.id}-pass-1.md`);
   const reportPath = join(root, "reports", `${input.id}.md`);
   const agentName = `orch-${state.id}-${input.id}`;
+  const baseRef = input.baseRef ?? state.baseRef;
   const branch = model.writesSource ? `orch/${state.id}/${input.id}` : null;
   await writeFile(promptPath, workerPrompt(input.prompt, reportPath));
   if (branch) {
-    await run(
-      "git",
-      ["worktree", "add", "-b", branch, worktreePath, state.baseRef],
-      state.repoRoot,
-    );
+    await run("git", ["worktree", "add", "-b", branch, worktreePath, baseRef], state.repoRoot);
   } else {
-    await run("git", ["worktree", "add", "--detach", worktreePath, state.baseRef], state.repoRoot);
+    await run("git", ["worktree", "add", "--detach", worktreePath, baseRef], state.repoRoot);
   }
   const now = new Date().toISOString();
   const worker: Worker = {

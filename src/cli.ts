@@ -15,7 +15,7 @@ function usage(): never {
   throw new Error(`Usage:
   orch doctor
   orch run start <goal> [--size trivial|normal|complex] [--base REF]
-  orch worker spawn <id> --route default|explore --prompt FILE --run RUN
+  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
   orch cleanup [--run RUN] [--apply] [--force]
@@ -86,7 +86,14 @@ async function main(): Promise<void> {
     const runId = option(args, "--run");
     if (!id || !route || !prompt || !runId || !["default", "explore"].includes(route)) usage();
     const state = await latestRun(cwd);
-    const worker = await spawnWorker({ repoRoot: state.repoRoot, runId, id, route, prompt });
+    const worker = await spawnWorker({
+      repoRoot: state.repoRoot,
+      runId,
+      id,
+      route,
+      prompt,
+      baseRef: option(args, "--base"),
+    });
     console.log(`Started ${worker.id} as ${worker.model.provider}/${worker.model.model}`);
     return;
   }
