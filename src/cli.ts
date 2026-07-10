@@ -107,7 +107,8 @@ async function main(): Promise<void> {
       ? await loadRun((await latestRun(cwd)).repoRoot, selected)
       : await latestRun(cwd);
     const deadline = Date.now() + timeout;
-    for (;;) {
+    let waiting = true;
+    while (waiting) {
       const state = await reconcileRun(initial.repoRoot, initial.id);
       const active = Object.values(state.workers).filter(
         (worker) => worker.status === "working" || worker.status === "launching",
@@ -119,7 +120,8 @@ async function main(): Promise<void> {
         throw new Error(`Workers need attention: ${blocked.map((worker) => worker.id).join(", ")}`);
       if (!active.length) {
         console.log("orch wait: settled");
-        return;
+        waiting = false;
+        continue;
       }
       if (Date.now() >= deadline)
         throw new Error(
