@@ -130,6 +130,7 @@ async function main(): Promise<void> {
         );
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
+    return;
   }
   if (args[0] === "cleanup") {
     const { cleanupRun } = await import("./orch.js");

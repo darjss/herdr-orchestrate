@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-DGkuj5dd.mjs";
+import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-BG4EMi-g.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
@@ -111,9 +111,10 @@ async function main() {
 			if (Date.now() >= deadline) throw new Error(`orch wait: timed out with ${active.map((worker) => worker.id).join(", ")}`);
 			await new Promise((resolve) => setTimeout(resolve, 2e3));
 		}
+		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-DGkuj5dd.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-BG4EMi-g.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({

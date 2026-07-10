@@ -216,13 +216,27 @@ async function spawnWorker(input) {
 	state.workers[worker.id] = worker;
 	await saveRun(state);
 	try {
+		const workspaceId = state.herdrWorkspaceId;
+		if (!workspaceId) throw new Error("Run has no orchestration workspace.");
+		const tab = await run("herdr", [
+			"tab",
+			"create",
+			"--workspace",
+			workspaceId,
+			"--label",
+			input.id,
+			"--no-focus"
+		]);
+		const tabId = JSON.parse(tab.stdout).result?.tab?.tab_id;
+		if (typeof tabId !== "string") throw new Error(`Herdr did not return a tab ID for worker '${input.id}'.`);
 		await run("herdr", [
 			"agent",
 			"start",
 			agentName,
 			"--cwd",
 			worktreePath,
-			...state.herdrWorkspaceId ? ["--workspace", state.herdrWorkspaceId] : [],
+			"--tab",
+			tabId,
 			"--no-focus",
 			"--",
 			"pi",
