@@ -16,6 +16,8 @@ interface Worker {
   model: ModelRoute;
   status: WorkerStatus;
   agentName: string;
+  paneId: string | null;
+  tabId: string | null;
   worktreePath: string;
   branch: string | null;
   promptPaths: string[];

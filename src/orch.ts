@@ -94,6 +94,8 @@ export async function spawnWorker(input: {
     model,
     status: "launching",
     agentName,
+    paneId: null,
+    tabId: null,
     worktreePath,
     branch,
     promptPaths: [promptPath],
@@ -118,15 +120,27 @@ export async function spawnWorker(input: {
       input.id,
       "--no-focus",
     ]);
-    const rootPaneId = (
-      JSON.parse(tab.stdout) as { result?: { root_pane?: { pane_id?: unknown } } }
-    ).result?.root_pane?.pane_id;
+    const tabResult = JSON.parse(tab.stdout) as {
+      result?: { tab?: { tab_id?: unknown }; root_pane?: { pane_id?: unknown } };
+    };
+    const rootPaneId = tabResult.result?.root_pane?.pane_id;
+    worker.tabId =
+      typeof tabResult.result?.tab?.tab_id === "string" ? tabResult.result.tab.tab_id : null;
     if (typeof rootPaneId !== "string")
       throw new Error(`Herdr did not return a root pane for worker '${input.id}'.`);
     const command = `cd ${JSON.stringify(worktreePath)} && exec pi --name ${JSON.stringify(agentName)} --provider ${JSON.stringify(model.provider)} --model ${JSON.stringify(model.model)} --thinking ${JSON.stringify(model.thinking)}`;
+    worker.paneId = rootPaneId;
     await run("herdr", ["pane", "run", rootPaneId, command]);
-    await run("herdr", ["agent", "wait", agentName, "--status", "idle", "--timeout", "30000"]);
-    await deliver(agentName, promptPath);
+    await run("herdr", [
+      "wait",
+      "agent-status",
+      rootPaneId,
+      "--status",
+      "idle",
+      "--timeout",
+      "30000",
+    ]);
+    await deliver(rootPaneId, promptPath);
     worker.status = "working";
     worker.updatedAt = new Date().toISOString();
     await saveRun(state);
@@ -160,7 +174,8 @@ export async function sendWorker(input: {
     : (input.text ?? "");
   await writeFile(destination, workerPrompt(prompt, worker.reportPath));
   try {
-    await deliver(worker.agentName, destination);
+    if (!worker.paneId) throw new Error(`Worker '${worker.id}' has no pane ID.`);
+    await deliver(worker.paneId, destination);
     worker.promptPaths.push(destination);
     worker.status = "working";
     worker.updatedAt = new Date().toISOString();
