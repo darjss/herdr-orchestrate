@@ -227,25 +227,13 @@ async function spawnWorker(input) {
 			input.id,
 			"--no-focus"
 		]);
-		const tabId = JSON.parse(tab.stdout).result?.tab?.tab_id;
-		if (typeof tabId !== "string") throw new Error(`Herdr did not return a tab ID for worker '${input.id}'.`);
+		const rootPaneId = JSON.parse(tab.stdout).result?.root_pane?.pane_id;
+		if (typeof rootPaneId !== "string") throw new Error(`Herdr did not return a root pane for worker '${input.id}'.`);
 		await run("herdr", [
-			"agent",
-			"start",
-			agentName,
-			"--cwd",
-			worktreePath,
-			"--tab",
-			tabId,
-			"--no-focus",
-			"--",
-			"pi",
-			"--provider",
-			model.provider,
-			"--model",
-			model.model,
-			"--thinking",
-			model.thinking
+			"pane",
+			"run",
+			rootPaneId,
+			`cd ${JSON.stringify(worktreePath)} && exec pi --name ${JSON.stringify(agentName)} --provider ${JSON.stringify(model.provider)} --model ${JSON.stringify(model.model)} --thinking ${JSON.stringify(model.thinking)}`
 		]);
 		await run("herdr", [
 			"agent",
