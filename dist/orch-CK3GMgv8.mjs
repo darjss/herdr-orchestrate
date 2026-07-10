@@ -443,12 +443,16 @@ async function cleanupRun(input) {
 				]);
 			}
 		} catch {}
-		await run("git", [
-			"worktree",
-			"remove",
-			worker.worktreePath,
-			...input.force ? ["--force"] : []
-		], state.repoRoot);
+		try {
+			await run("git", [
+				"worktree",
+				"remove",
+				worker.worktreePath,
+				...input.force ? ["--force"] : []
+			], state.repoRoot);
+		} catch (error) {
+			if (!String(error).includes("is not a working tree")) throw error;
+		}
 	}
 	return lines;
 }
