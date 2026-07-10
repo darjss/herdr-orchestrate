@@ -2,6 +2,18 @@ import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+//#region \0rolldown/runtime.js
+var __defProp = Object.defineProperty;
+var __exportAll = (all, no_symbols) => {
+	let target = {};
+	for (var name in all) __defProp(target, name, {
+		get: all[name],
+		enumerable: true
+	});
+	if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: "Module" });
+	return target;
+};
+//#endregion
 //#region src/shell.ts
 async function run(command, args, cwd) {
 	return new Promise((resolve, reject) => {
@@ -99,6 +111,17 @@ async function saveRun(state, env = process.env) {
 }
 //#endregion
 //#region src/orch.ts
+var orch_exports = /* @__PURE__ */ __exportAll({
+	board: () => board,
+	cleanupRun: () => cleanupRun,
+	doctor: () => doctor,
+	latestRun: () => latestRun,
+	reconcileRun: () => reconcileRun,
+	repositoryRoot: () => repositoryRoot,
+	sendWorker: () => sendWorker,
+	spawnWorker: () => spawnWorker,
+	startRun: () => startRun
+});
 async function repositoryRoot(cwd) {
 	return (await run("git", ["rev-parse", "--show-toplevel"], cwd)).stdout.trim();
 }
@@ -394,6 +417,36 @@ async function reconcileRun(repoRoot, runId) {
 	await saveRun(state);
 	return state;
 }
+async function cleanupRun(input) {
+	const state = await loadRun(input.repoRoot, input.runId);
+	const lines = [];
+	for (const worker of Object.values(state.workers)) {
+		lines.push(`${input.apply ? "remove" : "would remove"} worktree ${worker.worktreePath}`);
+		lines.push(`${input.apply ? "close" : "would close"} worker ${worker.agentName}`);
+		if (!input.apply) continue;
+		if (!input.force && (worker.status === "working" || worker.status === "launching")) throw new Error(`Refusing to clean active worker '${worker.id}' without --force.`);
+		try {
+			const response = await run("herdr", [
+				"agent",
+				"get",
+				worker.agentName
+			]);
+			const tabId = JSON.parse(response.stdout).result?.agent?.tab_id;
+			if (typeof tabId === "string") await run("herdr", [
+				"tab",
+				"close",
+				tabId
+			]);
+		} catch {}
+		await run("git", [
+			"worktree",
+			"remove",
+			worker.worktreePath,
+			...input.force ? ["--force"] : []
+		], state.repoRoot);
+	}
+	return lines;
+}
 function board(state) {
 	const lines = [
 		`# orch board`,
@@ -425,4 +478,4 @@ async function latestRun(cwd) {
 	return loadRun(repoRoot, entries.sort().at(-1));
 }
 //#endregion
-export { sendWorker as a, MODEL_ROUTES as c, reconcileRun as i, loadRun as l, doctor as n, spawnWorker as o, latestRun as r, startRun as s, board as t };
+export { reconcileRun as a, startRun as c, orch_exports as i, MODEL_ROUTES as l, doctor as n, sendWorker as o, latestRun as r, spawnWorker as s, board as t, loadRun as u };

@@ -23,6 +23,12 @@ title = "orch: reconcile"
 contexts = ["workspace", "tab", "pane"]
 command = ["node", "dist/cli.mjs", "board"]
 
+[[actions]]
+id = "cleanup-preview"
+title = "orch: cleanup preview"
+contexts = ["workspace", "tab", "pane"]
+command = ["node", "dist/cli.mjs", "cleanup"]
+
 [[panes]]
 id = "board"
 title = "orch board"

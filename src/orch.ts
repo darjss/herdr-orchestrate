@@ -279,6 +279,38 @@ export async function reconcileRun(repoRoot: string, runId: string): Promise<Run
   return state;
 }
 
+export async function cleanupRun(input: {
+  repoRoot: string;
+  runId: string;
+  apply: boolean;
+  force: boolean;
+}): Promise<string[]> {
+  const state = await loadRun(input.repoRoot, input.runId);
+  const lines: string[] = [];
+  for (const worker of Object.values(state.workers)) {
+    lines.push(`${input.apply ? "remove" : "would remove"} worktree ${worker.worktreePath}`);
+    lines.push(`${input.apply ? "close" : "would close"} worker ${worker.agentName}`);
+    if (!input.apply) continue;
+    if (!input.force && (worker.status === "working" || worker.status === "launching")) {
+      throw new Error(`Refusing to clean active worker '${worker.id}' without --force.`);
+    }
+    try {
+      const response = await run("herdr", ["agent", "get", worker.agentName]);
+      const tabId = (JSON.parse(response.stdout) as { result?: { agent?: { tab_id?: unknown } } })
+        .result?.agent?.tab_id;
+      if (typeof tabId === "string") await run("herdr", ["tab", "close", tabId]);
+    } catch {
+      /* Missing panes are already cleaned up. */
+    }
+    await run(
+      "git",
+      ["worktree", "remove", worker.worktreePath, ...(input.force ? ["--force"] : [])],
+      state.repoRoot,
+    );
+  }
+  return lines;
+}
+
 export function board(state: RunState): string {
   const lines = [
     `# orch board`,

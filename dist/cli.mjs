@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as sendWorker, i as reconcileRun, l as loadRun, n as doctor, o as spawnWorker, r as latestRun, s as startRun, t as board } from "./orch-CDubIqhI.mjs";
+import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-B8iwJryK.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
@@ -9,6 +9,7 @@ function usage() {
   orch worker spawn <id> --route default|explore --prompt FILE --run RUN
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
+  orch cleanup [--run RUN] [--apply] [--force]
   orch board [--run RUN]`);
 }
 function invocationCwd() {
@@ -110,6 +111,18 @@ async function main() {
 			if (Date.now() >= deadline) throw new Error(`orch wait: timed out with ${active.map((worker) => worker.id).join(", ")}`);
 			await new Promise((resolve) => setTimeout(resolve, 2e3));
 		}
+	}
+	if (args[0] === "cleanup") {
+		const { cleanupRun } = await import("./orch-B8iwJryK.mjs").then((n) => n.i);
+		const selected = option(args, "--run");
+		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
+		console.log((await cleanupRun({
+			repoRoot: state.repoRoot,
+			runId: state.id,
+			apply: args.includes("--apply"),
+			force: args.includes("--force")
+		})).join("\n"));
+		return;
 	}
 	if (args[0] === "board") {
 		const selected = option(args, "--run");

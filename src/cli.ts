@@ -18,6 +18,7 @@ function usage(): never {
   orch worker spawn <id> --route default|explore --prompt FILE --run RUN
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
+  orch cleanup [--run RUN] [--apply] [--force]
   orch board [--run RUN]`);
 }
 
@@ -129,6 +130,24 @@ async function main(): Promise<void> {
         );
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
+  }
+  if (args[0] === "cleanup") {
+    const { cleanupRun } = await import("./orch.js");
+    const selected = option(args, "--run");
+    const state = selected
+      ? await loadRun((await latestRun(cwd)).repoRoot, selected)
+      : await latestRun(cwd);
+    console.log(
+      (
+        await cleanupRun({
+          repoRoot: state.repoRoot,
+          runId: state.id,
+          apply: args.includes("--apply"),
+          force: args.includes("--force"),
+        })
+      ).join("\n"),
+    );
+    return;
   }
   if (args[0] === "board") {
     const selected = option(args, "--run");
