@@ -60,7 +60,7 @@ function projectKey(repoRoot) {
 	return `${repoRoot.split("/").filter(Boolean).at(-1) ?? "project"}-${createHash("sha256").update(repoRoot).digest("hex").slice(0, 8)}`;
 }
 function stateRoot(env = process.env) {
-	return env.ORCH_STATE_DIR ?? resolve(env.HOME ?? ".", ".local/share/herdr-orchestrate");
+	return env.ORCH_STATE_DIR ?? resolve(env.HOME ?? ".", "dev/orch-v2");
 }
 function projectRoot(repoRoot, env = process.env) {
 	return join(stateRoot(env), "projects", projectKey(repoRoot));

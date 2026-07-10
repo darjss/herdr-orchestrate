@@ -69,7 +69,7 @@ export function projectKey(repoRoot: string): string {
 }
 
 export function stateRoot(env = process.env): string {
-  return env.ORCH_STATE_DIR ?? resolve(env.HOME ?? ".", ".local/share/herdr-orchestrate");
+  return env.ORCH_STATE_DIR ?? resolve(env.HOME ?? ".", "dev/orch-v2");
 }
 
 export function projectRoot(repoRoot: string, env = process.env): string {
