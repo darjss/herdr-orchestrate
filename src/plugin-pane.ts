@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-import { board, latestRun, startRun } from "./orch.js";
+import { board, latestRun, reconcileRun, startRun } from "./orch.js";
 import type { TaskSize } from "./state.js";
 
 async function main(): Promise<void> {
   const pane = process.argv[2] ?? process.env.HERDR_PLUGIN_ENTRYPOINT_ID;
   if (pane === "board") {
-    const render = async () => console.log(board(await latestRun(process.cwd())));
+    const render = async () => {
+      const state = await latestRun(process.cwd());
+      console.log(board(await reconcileRun(state.repoRoot, state.id)));
+    };
     await render();
     const reader = createInterface({ input: stdin, output: stdout });
     try {

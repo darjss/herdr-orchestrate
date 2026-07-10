@@ -61,7 +61,8 @@ declare function sendWorker(input: {
   promptPath?: string;
 }): Promise<void>;
 declare function doctor(cwd: string): Promise<string[]>;
+declare function reconcileRun(repoRoot: string, runId: string): Promise<RunState>;
 declare function board(state: RunState): string;
 declare function latestRun(cwd: string): Promise<RunState>;
 //#endregion
-export { MODEL_ROUTES, type ModelRoute, type Route, type RunState, type TaskSize, type Worker, board, doctor, latestRun, sendWorker, spawnWorker, startRun };
+export { MODEL_ROUTES, type ModelRoute, type Route, type RunState, type TaskSize, type Worker, board, doctor, latestRun, reconcileRun, sendWorker, spawnWorker, startRun };

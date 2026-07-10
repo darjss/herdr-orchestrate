@@ -1,5 +1,13 @@
 #!/usr/bin/env node
-import { board, doctor, latestRun, sendWorker, spawnWorker, startRun } from "./orch.js";
+import {
+  board,
+  doctor,
+  latestRun,
+  reconcileRun,
+  sendWorker,
+  spawnWorker,
+  startRun,
+} from "./orch.js";
 import { loadRun, type Route, type TaskSize } from "./state.js";
 
 function usage(): never {
@@ -71,7 +79,7 @@ async function main(): Promise<void> {
     const state = selected
       ? await loadRun((await latestRun(cwd)).repoRoot, selected)
       : await latestRun(cwd);
-    console.log(board(state));
+    console.log(board(await reconcileRun(state.repoRoot, state.id)));
     return;
   }
   usage();

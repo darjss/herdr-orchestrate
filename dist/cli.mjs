@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as spawnWorker, c as loadRun, i as sendWorker, n as doctor, o as startRun, r as latestRun, t as board } from "./orch-X3uCr8oR.mjs";
+import { a as sendWorker, i as reconcileRun, l as loadRun, n as doctor, o as spawnWorker, r as latestRun, s as startRun, t as board } from "./orch-Bg5esw9u.mjs";
 //#region src/cli.ts
 function usage() {
 	throw new Error(`Usage:
@@ -76,7 +76,7 @@ async function main() {
 	if (args[0] === "board") {
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
-		console.log(board(state));
+		console.log(board(await reconcileRun(state.repoRoot, state.id)));
 		return;
 	}
 	usage();

@@ -1,4 +1,12 @@
-export { board, doctor, latestRun, sendWorker, spawnWorker, startRun } from "./orch.js";
+export {
+  board,
+  doctor,
+  latestRun,
+  reconcileRun,
+  sendWorker,
+  spawnWorker,
+  startRun,
+} from "./orch.js";
 export {
   MODEL_ROUTES,
   type ModelRoute,

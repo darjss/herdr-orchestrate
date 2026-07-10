@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-import { o as startRun, r as latestRun, t as board } from "./orch-X3uCr8oR.mjs";
+import { i as reconcileRun, r as latestRun, s as startRun, t as board } from "./orch-Bg5esw9u.mjs";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 //#region src/plugin-pane.ts
 async function main() {
 	const pane = process.argv[2] ?? process.env.HERDR_PLUGIN_ENTRYPOINT_ID;
 	if (pane === "board") {
-		const render = async () => console.log(board(await latestRun(process.cwd())));
+		const render = async () => {
+			const state = await latestRun(process.cwd());
+			console.log(board(await reconcileRun(state.repoRoot, state.id)));
+		};
 		await render();
 		const reader = createInterface({
 			input: stdin,

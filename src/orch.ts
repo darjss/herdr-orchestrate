@@ -1,4 +1,4 @@
-import { copyFile, readFile, readdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { run } from "./shell.js";
 import {
@@ -47,10 +47,7 @@ export async function spawnWorker(input: {
   const reportPath = join(root, "reports", `${input.id}.md`);
   const agentName = `orch-${state.id}-${input.id}`;
   const branch = model.writesSource ? `orch/${state.id}/${input.id}` : null;
-  await writeFile(
-    promptPath,
-    `${input.prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`,
-  );
+  await writeFile(promptPath, workerPrompt(input.prompt, reportPath));
   if (branch) {
     await run(
       "git",
@@ -126,8 +123,10 @@ export async function sendWorker(input: {
     "prompts",
     `${input.id}-pass-${pass}.md`,
   );
-  if (input.promptPath) await copyFile(resolve(input.promptPath), destination);
-  else await writeFile(destination, input.text ?? "");
+  const prompt = input.promptPath
+    ? await readFile(resolve(input.promptPath), "utf8")
+    : (input.text ?? "");
+  await writeFile(destination, workerPrompt(prompt, worker.reportPath));
   try {
     await deliver(worker.agentName, destination);
     worker.promptPaths.push(destination);
@@ -140,6 +139,10 @@ export async function sendWorker(input: {
     await saveRun(state);
     throw error;
   }
+}
+
+function workerPrompt(prompt: string, reportPath: string): string {
+  return `${prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`;
 }
 
 async function deliver(agentName: string, promptPath: string): Promise<void> {
@@ -213,6 +216,36 @@ export async function doctor(cwd: string): Promise<string[]> {
     outcomes.push(`${command}: ok`);
   }
   return outcomes;
+}
+
+export async function reconcileRun(repoRoot: string, runId: string): Promise<RunState> {
+  const state = await loadRun(repoRoot, runId);
+  for (const worker of Object.values(state.workers)) {
+    try {
+      const response = await run("herdr", ["agent", "get", worker.agentName]);
+      const status = (
+        JSON.parse(response.stdout) as { result?: { agent?: { agent_status?: unknown } } }
+      ).result?.agent?.agent_status;
+      const report = await readFile(worker.reportPath, "utf8").catch(() => null);
+      if (report?.includes("orch-verdict: blocked")) {
+        worker.status = "blocked";
+        worker.verdict = "blocked";
+      } else if (report?.includes("orch-verdict: done")) {
+        worker.status = "done";
+        worker.verdict = "done";
+      } else if (status === "blocked") {
+        worker.status = "blocked";
+      } else if (status === "working") {
+        worker.status = "working";
+      }
+      worker.updatedAt = new Date().toISOString();
+    } catch {
+      worker.status = "failed";
+      worker.updatedAt = new Date().toISOString();
+    }
+  }
+  await saveRun(state);
+  return state;
 }
 
 export function board(state: RunState): string {

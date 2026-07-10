@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
@@ -125,7 +125,7 @@ async function spawnWorker(input) {
 	const reportPath = join(root, "reports", `${input.id}.md`);
 	const agentName = `orch-${state.id}-${input.id}`;
 	const branch = model.writesSource ? `orch/${state.id}/${input.id}` : null;
-	await writeFile(promptPath, `${input.prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`);
+	await writeFile(promptPath, workerPrompt(input.prompt, reportPath));
 	if (branch) await run("git", [
 		"worktree",
 		"add",
@@ -204,8 +204,7 @@ async function sendWorker(input) {
 	if (!worker) throw new Error(`Unknown worker '${input.id}'.`);
 	const pass = worker.promptPaths.length + 1;
 	const destination = join(runRoot(state.repoRoot, state.id), "prompts", `${input.id}-pass-${pass}.md`);
-	if (input.promptPath) await copyFile(resolve(input.promptPath), destination);
-	else await writeFile(destination, input.text ?? "");
+	await writeFile(destination, workerPrompt(input.promptPath ? await readFile(resolve(input.promptPath), "utf8") : input.text ?? "", worker.reportPath));
 	try {
 		await deliver(worker.agentName, destination);
 		worker.promptPaths.push(destination);
@@ -218,6 +217,9 @@ async function sendWorker(input) {
 		await saveRun(state);
 		throw error;
 	}
+}
+function workerPrompt(prompt, reportPath) {
+	return `${prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`;
 }
 async function deliver(agentName, promptPath) {
 	const text = await readFile(promptPath, "utf8");
@@ -333,6 +335,32 @@ async function doctor(cwd) {
 	}
 	return outcomes;
 }
+async function reconcileRun(repoRoot, runId) {
+	const state = await loadRun(repoRoot, runId);
+	for (const worker of Object.values(state.workers)) try {
+		const response = await run("herdr", [
+			"agent",
+			"get",
+			worker.agentName
+		]);
+		const status = JSON.parse(response.stdout).result?.agent?.agent_status;
+		const report = await readFile(worker.reportPath, "utf8").catch(() => null);
+		if (report?.includes("orch-verdict: blocked")) {
+			worker.status = "blocked";
+			worker.verdict = "blocked";
+		} else if (report?.includes("orch-verdict: done")) {
+			worker.status = "done";
+			worker.verdict = "done";
+		} else if (status === "blocked") worker.status = "blocked";
+		else if (status === "working") worker.status = "working";
+		worker.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+	} catch {
+		worker.status = "failed";
+		worker.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+	}
+	await saveRun(state);
+	return state;
+}
 function board(state) {
 	const lines = [
 		`# orch board`,
@@ -364,4 +392,4 @@ async function latestRun(cwd) {
 	return loadRun(repoRoot, entries.sort().at(-1));
 }
 //#endregion
-export { spawnWorker as a, loadRun as c, sendWorker as i, doctor as n, startRun as o, latestRun as r, MODEL_ROUTES as s, board as t };
+export { sendWorker as a, MODEL_ROUTES as c, reconcileRun as i, loadRun as l, doctor as n, spawnWorker as o, latestRun as r, startRun as s, board as t };
