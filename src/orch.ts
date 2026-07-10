@@ -317,10 +317,13 @@ export async function cleanupRun(input: {
       throw new Error(`Refusing to clean active worker '${worker.id}' without --force.`);
     }
     try {
-      const response = await run("herdr", ["agent", "get", worker.agentName]);
-      const tabId = (JSON.parse(response.stdout) as { result?: { agent?: { tab_id?: unknown } } })
-        .result?.agent?.tab_id;
-      if (typeof tabId === "string") await run("herdr", ["tab", "close", tabId]);
+      if (worker.tabId) await run("herdr", ["tab", "close", worker.tabId]);
+      else {
+        const response = await run("herdr", ["agent", "get", worker.agentName]);
+        const tabId = (JSON.parse(response.stdout) as { result?: { agent?: { tab_id?: unknown } } })
+          .result?.agent?.tab_id;
+        if (typeof tabId === "string") await run("herdr", ["tab", "close", tabId]);
+      }
     } catch {
       /* Missing panes are already cleaned up. */
     }

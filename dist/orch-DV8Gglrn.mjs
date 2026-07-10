@@ -286,20 +286,19 @@ async function sendWorker(input) {
 function workerPrompt(prompt, reportPath) {
 	return `${prompt.trim()}\n\n## orch completion\nWrite your report to ${reportPath}. End it with: \`orch-verdict: done\` or \`orch-verdict: blocked <reason>\`.\n`;
 }
-async function deliver(agentName, promptPath) {
+async function deliver(paneId, promptPath) {
 	const text = await readFile(promptPath, "utf8");
 	try {
 		await run("herdr", [
-			"agent",
 			"wait",
-			agentName,
+			"agent-status",
+			paneId,
 			"--status",
 			"idle",
 			"--timeout",
 			"10000"
 		]);
 	} catch {}
-	const paneId = await agentPaneId(agentName);
 	await run("herdr", [
 		"pane",
 		"send-text",
@@ -314,9 +313,9 @@ async function deliver(agentName, promptPath) {
 	]);
 	try {
 		await run("herdr", [
-			"agent",
 			"wait",
-			agentName,
+			"agent-status",
+			paneId,
 			"--status",
 			"working",
 			"--timeout",
@@ -343,25 +342,15 @@ async function deliver(agentName, promptPath) {
 			"Enter"
 		]);
 		await run("herdr", [
-			"agent",
 			"wait",
-			agentName,
+			"agent-status",
+			paneId,
 			"--status",
 			"working",
 			"--timeout",
 			"10000"
 		]);
 	}
-}
-async function agentPaneId(agentName) {
-	const result = await run("herdr", [
-		"agent",
-		"get",
-		agentName
-	]);
-	const paneId = JSON.parse(result.stdout).result?.agent?.pane_id;
-	if (typeof paneId !== "string") throw new Error(`Herdr did not return a pane ID for ${agentName}.`);
-	return paneId;
 }
 async function doctor(cwd) {
 	const checks = [
@@ -435,17 +424,24 @@ async function cleanupRun(input) {
 		if (!input.apply) continue;
 		if (!input.force && (worker.status === "working" || worker.status === "launching")) throw new Error(`Refusing to clean active worker '${worker.id}' without --force.`);
 		try {
-			const response = await run("herdr", [
-				"agent",
-				"get",
-				worker.agentName
-			]);
-			const tabId = JSON.parse(response.stdout).result?.agent?.tab_id;
-			if (typeof tabId === "string") await run("herdr", [
+			if (worker.tabId) await run("herdr", [
 				"tab",
 				"close",
-				tabId
+				worker.tabId
 			]);
+			else {
+				const response = await run("herdr", [
+					"agent",
+					"get",
+					worker.agentName
+				]);
+				const tabId = JSON.parse(response.stdout).result?.agent?.tab_id;
+				if (typeof tabId === "string") await run("herdr", [
+					"tab",
+					"close",
+					tabId
+				]);
+			}
 		} catch {}
 		await run("git", [
 			"worktree",
