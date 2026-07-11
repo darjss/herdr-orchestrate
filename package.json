@@ -1,6 +1,6 @@
 {
   "name": "herdr-orchestrate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pi-native orchestration for visible Herdr worker sessions.",
   "keywords": [
     "ai-agents",
