@@ -19,7 +19,7 @@
 ## 3. Run Lifecycle
 
 - Support arbitrary workers and dependency-free stage transitions.
-- Scale the workflow by task size: trivial (`implement → proof`), normal (`research/plan → implement → review → proof`), complex (user/god architecture decision before implementation).
+- Use task size as dynamic workflow guidance rather than an enforced state machine: trivial tasks often need implementation and proof, normal tasks often benefit from research/plan → implement → review → proof, and complex tasks may need a user/god architecture decision before implementation. The god session may omit, repeat, or parallelize stages based on intent and evidence; `orch` does not automate workflow stages.
 - Store prompts, reports, logs, worktrees, branches, PRs, verdicts, checks, and proof as durable artifacts.
 
 ## 4. Herdr Plugin

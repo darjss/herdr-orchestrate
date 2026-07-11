@@ -14,22 +14,24 @@ This current user-facing Pi session is the **god session**. Keep decisions and u
 
 The god session may use:
 
-- the v2 CLI's `doctor`, `run start`, `worker spawn`, `worker send`, `wait`, `board`, and `cleanup` commands;
+- the v2 `orch` CLI's `doctor`, `run start`, `worker spawn`, `worker send`, `wait`, `board`, and `cleanup` commands;
 - durable worker reports;
 - simple Git identity/status commands and `gh` for PR/check/merge lifecycle;
 - prompt files it creates for workers.
 
 It must not inspect source, diffs, worker panes, browser output, or raw check/test logs, and must not edit target-project source. Ask a worker for missing evidence. This boundary keeps the user conversation strategic and the worker evidence auditable.
 
-Never call bare `orch`: it may be the legacy implementation. Resolve this skill's package root (two directories above this file) and invoke its `dist/cli.mjs` with `node` for every command.
+Use the v2 `orch` command from PATH now that this package owns it. If PATH resolution is unavailable, resolve this skill's package root (two directories above this file) and use the direct-node fallback at `dist/cli.mjs`.
 
 ## 1. Establish the run
 
-Confirm `HERDR_ENV=1`, identify the target Git repository with a simple Git command, resolve the v2 CLI path, and run `doctor` from the target repository. Shape the user's request into a goal, constraints, acceptance criteria, and task size:
+Confirm `HERDR_ENV=1`, identify the target Git repository with a simple Git command, verify the v2 `orch` command (using the direct-node fallback only when PATH resolution is unavailable), and run `doctor` from the target repository. Shape the user's request into a goal, constraints, acceptance criteria, and task size. Task size is dynamic workflow guidance, not an enforced fixed state machine:
 
-- **trivial:** implement → proof;
-- **normal:** research/plan → implement → review → proof;
-- **complex:** research/plan → explicit god/user architecture decision → implement → review → proof.
+- **trivial** often suggests implement → proof;
+- **normal** often suggests research/plan → implement → review → proof;
+- **complex** may suggest research/plan → explicit god/user architecture decision → implement → review → proof.
+
+Based on user intent and evidence, omit, repeat, or parallelize stages as appropriate. `orch` provides worker lifecycle primitives; it does not automate this workflow.
 
 Use an explore worker only for input-heavy fact gathering. Explore uses `opencode-go/deepseek-v4-flash` at `high` and may not edit or decide. Every planning, implementation, review, and proof worker uses the default `openai-codex/gpt-5.6-luna` route at `xhigh`.
 

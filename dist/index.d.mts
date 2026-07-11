@@ -22,7 +22,9 @@ interface Worker {
   branch: string | null;
   promptPaths: string[];
   reportPath: string;
+  reportPaths: string[];
   verdict: string | null;
+  blockedReason: string | null;
   proof: string | null;
   prUrl: string | null;
   createdAt: string;

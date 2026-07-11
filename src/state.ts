@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export type Route = "default" | "explore";
 export type TaskSize = "trivial" | "normal" | "complex";
 export type WorkerStatus = "staged" | "launching" | "working" | "blocked" | "done" | "failed";
@@ -44,7 +44,9 @@ export interface Worker {
   branch: string | null;
   promptPaths: string[];
   reportPath: string;
+  reportPaths: string[];
   verdict: string | null;
+  blockedReason: string | null;
   proof: string | null;
   prUrl: string | null;
   createdAt: string;
@@ -121,7 +123,15 @@ export async function loadRun(
   runId: string,
   env = process.env,
 ): Promise<RunState> {
-  return JSON.parse(await readFile(statePath(repoRoot, runId, env), "utf8")) as RunState;
+  const state = JSON.parse(await readFile(statePath(repoRoot, runId, env), "utf8")) as RunState;
+  state.schemaVersion = Math.max(state.schemaVersion ?? 1, SCHEMA_VERSION);
+  for (const worker of Object.values(state.workers ?? {})) {
+    if (!Array.isArray(worker.reportPaths) || worker.reportPaths.length === 0) {
+      worker.reportPaths = worker.reportPath ? [worker.reportPath] : [];
+    }
+    if (worker.blockedReason === undefined) worker.blockedReason = null;
+  }
+  return state;
 }
 
 export async function saveRun(state: RunState, env = process.env): Promise<void> {

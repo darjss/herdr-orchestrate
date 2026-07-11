@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-D1Vjr1m1.mjs";
+import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-E68Gqc2m.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
@@ -103,7 +103,15 @@ async function main() {
 			const state = await reconcileRun(initial.repoRoot, initial.id);
 			const active = Object.values(state.workers).filter((worker) => worker.status === "working" || worker.status === "launching");
 			const blocked = Object.values(state.workers).filter((worker) => worker.status === "blocked" || worker.status === "failed");
-			if (blocked.length) throw new Error(`Workers need attention: ${blocked.map((worker) => worker.id).join(", ")}`);
+			if (blocked.length) {
+				const details = blocked.map((worker) => {
+					const fields = [`${worker.id}: status=${worker.status}`, `report=${worker.reportPath}`];
+					if (worker.verdict) fields.push(`verdict=${worker.verdict}`);
+					if (worker.blockedReason) fields.push(`blocked reason=${worker.blockedReason}`);
+					return `- ${fields.join("; ")}`;
+				}).join("\n");
+				throw new Error(`Workers need attention:\n${details}`);
+			}
 			if (!active.length) {
 				console.log("orch wait: settled");
 				waiting = false;
@@ -115,7 +123,7 @@ async function main() {
 		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-D1Vjr1m1.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-E68Gqc2m.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({

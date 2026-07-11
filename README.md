@@ -37,28 +37,38 @@ Restart Pi after installing so it discovers the packaged skills. Invoke the user
 /skill:god-mode
 ```
 
-The skill resolves `dist/cli.mjs` from its package and intentionally does not call a bare `orch`; an older implementation may already occupy that PATH name.
+The skill uses the v2 `orch` command from PATH. If PATH resolution is unavailable, use the direct-node fallback shown below.
 
 ## CLI
 
-Until v2 intentionally replaces any legacy PATH command, invoke the built CLI directly:
+Use the v2 CLI from PATH:
+
+```bash
+orch doctor
+orch run start "describe the task" --size normal
+orch worker spawn research \
+  --route default --prompt brief.md --run <run-id>
+orch worker spawn review \
+  --route default --prompt review.md --run <run-id> --base <implementation-sha>
+orch worker send research \
+  --text "focused follow-up" --run <run-id>
+orch board --run <run-id>
+orch wait --run <run-id>
+orch cleanup --run <run-id>
+orch cleanup --run <run-id> --apply
+```
+
+For local development or when `orch` is not on PATH, use the direct-node fallback:
 
 ```bash
 node /path/to/herdr-orchestrate/dist/cli.mjs doctor
-node /path/to/herdr-orchestrate/dist/cli.mjs run start "describe the task" --size normal
-node /path/to/herdr-orchestrate/dist/cli.mjs worker spawn research \
-  --route default --prompt brief.md --run <run-id>
-node /path/to/herdr-orchestrate/dist/cli.mjs worker spawn review \
-  --route default --prompt review.md --run <run-id> --base <implementation-sha>
-node /path/to/herdr-orchestrate/dist/cli.mjs worker send research \
-  --text "focused follow-up" --run <run-id>
-node /path/to/herdr-orchestrate/dist/cli.mjs board --run <run-id>
-node /path/to/herdr-orchestrate/dist/cli.mjs wait --run <run-id>
-node /path/to/herdr-orchestrate/dist/cli.mjs cleanup --run <run-id>
-node /path/to/herdr-orchestrate/dist/cli.mjs cleanup --run <run-id> --apply
 ```
 
 Run `wait` through Pi's background-command tool. That lets Pi end its current turn and wake when workers settle.
+
+## Workflow guidance
+
+Task size provides dynamic workflow guidance, not an enforced fixed state machine. Trivial tasks often need implementation and proof, normal tasks often benefit from research, implementation, review, and proof, and complex tasks may need an explicit architecture decision first. The god session may omit, repeat, or parallelize stages based on user intent and evidence; `orch` does not automate those stages.
 
 Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 
@@ -66,7 +76,7 @@ Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 
 - Every run gets a dedicated `<project>-orchestrate` workspace.
 - The board occupies the first root pane; each worker gets one tab with one root pane.
-- Workers use isolated worktrees and durable report paths.
+- Workers use isolated worktrees and durable per-pass report paths.
 - Cleanup previews before applying and preserves branches and reports.
 - PR operations use `gh`; merging always requires explicit user approval.
 

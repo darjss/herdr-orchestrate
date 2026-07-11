@@ -1,4 +1,4 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { run } from "./shell.js";
@@ -88,10 +88,12 @@ export async function spawnWorker(input: {
   const root = runRoot(state.repoRoot, state.id);
   const worktreePath = join(root, "worktrees", input.id);
   const promptPath = join(root, "prompts", `${input.id}-pass-1.md`);
-  const reportPath = join(root, "reports", `${input.id}.md`);
+  const reportDirectory = join(root, "reports", input.id);
+  const reportPath = join(reportDirectory, "pass-1.md");
   const agentName = `orch-${state.id}-${input.id}`;
   const baseRef = input.baseRef ?? state.baseRef;
   const branch = model.writesSource ? `orch/${state.id}/${input.id}` : null;
+  await mkdir(reportDirectory, { recursive: true });
   await writeFile(promptPath, workerPrompt(input.prompt, reportPath));
   if (branch) {
     await run("git", ["worktree", "add", "-b", branch, worktreePath, baseRef], state.repoRoot);
@@ -111,7 +113,9 @@ export async function spawnWorker(input: {
     branch,
     promptPaths: [promptPath],
     reportPath,
+    reportPaths: [reportPath],
     verdict: null,
+    blockedReason: null,
     proof: null,
     prUrl: null,
     createdAt: now,
@@ -174,16 +178,15 @@ export async function sendWorker(input: {
   const state = await loadRun(input.repoRoot, input.runId);
   const worker = state.workers[input.id];
   if (!worker) throw new Error(`Unknown worker '${input.id}'.`);
-  const pass = worker.promptPaths.length + 1;
-  const destination = join(
-    runRoot(state.repoRoot, state.id),
-    "prompts",
-    `${input.id}-pass-${pass}.md`,
-  );
+  const pass = worker.reportPaths.length + 1;
+  const root = runRoot(state.repoRoot, state.id);
+  const destination = join(root, "prompts", `${input.id}-pass-${pass}.md`);
+  const reportPath = join(root, "reports", input.id, `pass-${pass}.md`);
   const prompt = input.promptPath
     ? await readFile(resolve(input.promptPath), "utf8")
     : (input.text ?? "");
-  await writeFile(destination, workerPrompt(prompt, worker.reportPath));
+  await mkdir(join(root, "reports", input.id), { recursive: true });
+  await writeFile(destination, workerPrompt(prompt, reportPath));
   try {
     const pane = await findWorkerPane(state, worker);
     if (!pane) throw new Error(`Worker '${worker.id}' has no live pane.`);
@@ -191,6 +194,10 @@ export async function sendWorker(input: {
     worker.tabId = pane.tab_id;
     await deliver(pane.pane_id, destination);
     worker.promptPaths.push(destination);
+    worker.reportPaths.push(reportPath);
+    worker.reportPath = reportPath;
+    worker.verdict = null;
+    worker.blockedReason = null;
     worker.status = "working";
     worker.updatedAt = new Date().toISOString();
     await saveRun(state);
@@ -307,6 +314,22 @@ async function findWorkerPane(state: RunState, worker: Worker): Promise<HerdrPan
   );
 }
 
+interface ReportVerdict {
+  verdict: "done" | "blocked";
+  blockedReason: string | null;
+}
+
+function finalReportVerdict(report: string): ReportVerdict | null {
+  const line = report
+    .split(/\r?\n/)
+    .findLast((candidate) => candidate.trim().length > 0)
+    ?.trim();
+  if (line === "orch-verdict: done") return { verdict: "done", blockedReason: null };
+  const blocked = line?.match(/^orch-verdict: blocked(?:\s+(.+))?$/);
+  if (blocked) return { verdict: "blocked", blockedReason: blocked[1]?.trim() || null };
+  return null;
+}
+
 export async function reconcileRun(repoRoot: string, runId: string): Promise<RunState> {
   const state = await loadRun(repoRoot, runId);
   const panes = await workspacePanes(state);
@@ -316,20 +339,23 @@ export async function reconcileRun(repoRoot: string, runId: string): Promise<Run
         candidate.foreground_cwd === worker.worktreePath || candidate.cwd === worker.worktreePath,
     );
     const report = await readFile(worker.reportPath, "utf8").catch(() => null);
-    if (report?.includes("orch-verdict: blocked")) {
-      worker.status = "blocked";
-      worker.verdict = "blocked";
-    } else if (report?.includes("orch-verdict: done")) {
-      worker.status = "done";
-      worker.verdict = "done";
-    } else if (!pane) {
-      worker.status = "failed";
+    const reportVerdict = report ? finalReportVerdict(report) : null;
+    if (reportVerdict) {
+      worker.status = reportVerdict.verdict;
+      worker.verdict = reportVerdict.verdict;
+      worker.blockedReason = reportVerdict.blockedReason;
     } else {
-      worker.paneId = pane.pane_id;
-      worker.tabId = pane.tab_id;
-      if (pane.agent_status === "blocked") worker.status = "blocked";
-      else if (pane.agent_status === "working") worker.status = "working";
-      else if (pane.agent_status === "done") worker.status = "done";
+      worker.verdict = null;
+      worker.blockedReason = null;
+      if (!pane) {
+        worker.status = "failed";
+      } else {
+        worker.paneId = pane.pane_id;
+        worker.tabId = pane.tab_id;
+        if (pane.agent_status === "blocked") worker.status = "blocked";
+        else if (pane.agent_status === "working") worker.status = "working";
+        else if (pane.agent_status === "done") worker.status = "done";
+      }
     }
     worker.updatedAt = new Date().toISOString();
   }
@@ -366,6 +392,18 @@ export async function cleanupRun(input: {
       );
     } catch (error) {
       if (!String(error).includes("is not a working tree")) throw error;
+    }
+  }
+  if (state.herdrWorkspaceId) {
+    lines.push(
+      `${input.apply ? "close" : "would close"} orchestration workspace ${state.herdrWorkspaceId}`,
+    );
+    if (input.apply) {
+      try {
+        await run("herdr", ["workspace", "close", state.herdrWorkspaceId]);
+      } catch {
+        /* The run workspace may already be closed. */
+      }
     }
   }
   return lines;

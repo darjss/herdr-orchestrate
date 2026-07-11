@@ -124,8 +124,17 @@ async function main(): Promise<void> {
       const blocked = Object.values(state.workers).filter(
         (worker) => worker.status === "blocked" || worker.status === "failed",
       );
-      if (blocked.length)
-        throw new Error(`Workers need attention: ${blocked.map((worker) => worker.id).join(", ")}`);
+      if (blocked.length) {
+        const details = blocked
+          .map((worker) => {
+            const fields = [`${worker.id}: status=${worker.status}`, `report=${worker.reportPath}`];
+            if (worker.verdict) fields.push(`verdict=${worker.verdict}`);
+            if (worker.blockedReason) fields.push(`blocked reason=${worker.blockedReason}`);
+            return `- ${fields.join("; ")}`;
+          })
+          .join("\n");
+        throw new Error(`Workers need attention:\n${details}`);
+      }
       if (!active.length) {
         console.log("orch wait: settled");
         waiting = false;

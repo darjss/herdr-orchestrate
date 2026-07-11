@@ -9,25 +9,25 @@ platforms = ["linux", "macos"]
 id = "doctor"
 title = "orch: doctor"
 contexts = ["workspace", "tab", "pane"]
-command = ["node", "dist/cli.mjs", "doctor"]
+command = ["orch", "doctor"]
 
 [[actions]]
 id = "status"
 title = "orch: status"
 contexts = ["workspace", "tab", "pane"]
-command = ["node", "dist/cli.mjs", "board"]
+command = ["orch", "board"]
 
 [[actions]]
 id = "reconcile"
 title = "orch: reconcile"
 contexts = ["workspace", "tab", "pane"]
-command = ["node", "dist/cli.mjs", "board"]
+command = ["orch", "board"]
 
 [[actions]]
 id = "cleanup-preview"
 title = "orch: cleanup preview"
 contexts = ["workspace", "tab", "pane"]
-command = ["node", "dist/cli.mjs", "cleanup"]
+command = ["orch", "cleanup"]
 
 [[panes]]
 id = "board"
