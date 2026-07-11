@@ -32,7 +32,37 @@ export async function startRun(input: {
   const baseRef =
     input.baseRef ??
     (await run("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], repoRoot)).stdout.trim();
+  const previous = await latestRun(repoRoot).catch(() => null);
   const state = await createRun({ repoRoot, goal: input.goal, size: input.size, baseRef });
+  if (previous?.herdrWorkspaceId && previous.boardPaneId) {
+    state.herdrWorkspaceId = previous.herdrWorkspaceId;
+    state.boardPaneId = previous.boardPaneId;
+    await saveRun(state);
+    try {
+      const panes = await workspacePanes(state);
+      const boardPane =
+        panes.find((pane) => pane.pane_id === previous.boardPaneId) ??
+        panes.find((pane) => pane.cwd === repoRoot);
+      if (boardPane) {
+        state.boardPaneId = boardPane.pane_id;
+        await saveRun(state);
+        await run("herdr", [
+          "wait",
+          "output",
+          boardPane.pane_id,
+          "--match",
+          state.id,
+          "--timeout",
+          "10000",
+        ]);
+        return state;
+      }
+    } catch {
+      state.herdrWorkspaceId = null;
+      state.boardPaneId = null;
+      await saveRun(state);
+    }
+  }
   const label = `${repoRoot.split("/").filter(Boolean).at(-1)}-orchestrate`;
   const workspace = await run("herdr", [
     "workspace",
@@ -406,18 +436,6 @@ export async function cleanupRun(input: {
       );
     } catch (error) {
       if (!String(error).includes("is not a working tree")) throw error;
-    }
-  }
-  if (state.herdrWorkspaceId) {
-    lines.push(
-      `${input.apply ? "close" : "would close"} orchestration workspace ${state.herdrWorkspaceId}`,
-    );
-    if (input.apply) {
-      try {
-        await run("herdr", ["workspace", "close", state.herdrWorkspaceId]);
-      } catch {
-        /* The run workspace may already be closed. */
-      }
     }
   }
   return lines;

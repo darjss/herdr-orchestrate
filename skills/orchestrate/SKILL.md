@@ -35,7 +35,7 @@ Based on user intent and evidence, omit, repeat, or parallelize stages as approp
 
 Use an explore worker only for input-heavy fact gathering. Explore uses `opencode-go/deepseek-v4-flash` at `high` and may not edit or decide. Every planning, implementation, review, and proof worker uses the default `openai-codex/gpt-5.6-sol` route. Before each default-route spawn, choose `--thinking` based on task risk: `low` for trivial bounded low-risk tasks, `medium` for routine work, `high` for difficult debugging, security, or architecture work, and `xhigh` only when the god/user explicitly escalates. The worker does not choose or change thinking after launch; the selected level must be supplied at spawn time. Explore remains high and rejects non-high overrides.
 
-Start one run with `run start`, retain its run ID, and use that ID explicitly thereafter. This step is complete when `board --run <id>` shows the intended goal, size, dedicated orchestration workspace, and no unintended workers.
+Start one run with `run start`, retain its run ID, and use that ID explicitly thereafter. The CLI reuses the project's persistent orchestration workspace and board. This step is complete when `board --run <id>` shows the intended goal, size, and no unintended workers.
 
 ## 2. Delegate the next gate
 
@@ -74,6 +74,6 @@ This step is complete when the user-approved PR is merged, or when the user expl
 
 ## 5. Close the run
 
-Run cleanup preview first, verify it targets only this run's worker tabs/worktrees, then run cleanup apply. Cleanup must preserve branches and durable prompts/reports. Report one concise table or list containing each worker's role, branch/SHA/PR, verdict, checks, proof, merge status, and any next action.
+Run cleanup preview first, verify it targets only this run's worker tabs/worktrees, then run cleanup apply. Cleanup closes worker tabs but keeps the project's board workspace available for the next run; it must preserve branches and durable prompts/reports. Report one concise table or list containing each worker's role, branch/SHA/PR, verdict, checks, proof, merge status, and any next action.
 
 The orchestration is complete only when every user requirement has report-backed evidence, required proof is live, merge state matches the user's decision, and disposable worker resources are cleaned up.

@@ -2,7 +2,7 @@
 
 Pi-native orchestration for visible [Herdr](https://herdr.dev) worker sessions.
 
-`herdr-orchestrate` provides a Herdr run board, durable prompts/reports/state, isolated Git worktrees, explicit Pi model routing, background waiting, and safe cleanup. The user-facing `orchestrate` skill keeps the current Pi session strategic while delegated workers remain visible and auditable in a dedicated Herdr workspace.
+`herdr-orchestrate` provides a Herdr run board, durable prompts/reports/state, isolated Git worktrees, explicit Pi model routing, background waiting, and safe cleanup. The user-facing `orchestrate` skill keeps the current Pi session strategic while delegated workers remain visible and auditable in a persistent project workspace.
 
 ## Model routes
 
@@ -78,10 +78,10 @@ Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 
 ## Safety gates
 
-- Every run gets a dedicated `<project>-orchestrate` workspace.
+- Each project reuses one persistent `<project>-orchestrate` workspace.
 - The board occupies the first root pane; each worker gets one tab with one root pane.
 - Workers use isolated worktrees and durable per-pass report paths.
-- Cleanup previews before applying and preserves branches and reports.
+- Cleanup previews before applying, closes only worker tabs, and preserves the board workspace, branches, and reports.
 - PR operations use `gh`; merging always requires explicit user approval.
 
 ## Development
