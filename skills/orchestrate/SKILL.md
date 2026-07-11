@@ -57,7 +57,9 @@ Spawn with:
 worker spawn <id> --route <default|fast|explore> --prompt <file> --run <run-id> [--thinking <low|medium|high|xhigh>] [--base <ref-or-sha>]
 ```
 
-Review and proof workers must use `--base <implementation-sha>` so they inspect the delivered code, not the run's original base. Parallelize only independent read-only work or disjoint implementation ownership.
+Review and proof workers must use `--base <implementation-sha>` so they inspect the delivered code, not the run's original base.
+
+Prefer a **fan-out/fan-in** gate over assigning one broad task to one worker. Before spawning, split the gate by independent system, issue, user path, or evidence source; run those workers in parallel, then synthesize their durable reports before the next gate. Keep each brief bounded enough that one worker can produce deep evidence for one concern. Use a single broad worker only when the work is inherently coupled, splitting would duplicate most investigation, or concurrent writers would overlap. Parallel implementation requires disjoint ownership; read-only research, review, and proof should be parallelized whenever their scopes can be separated.
 
 Immediately run `wait --run <id>` through Pi's `bg_command` tool. Never foreground the wait and never use shell `&`: the background tool is what wakes the god session when workers settle.
 
