@@ -76,6 +76,8 @@ Read reports, not panes or source. Map every report claim to the current gate's 
 
 Do not advance while the current gate is blocked, missing its report, or lacks evidence for any acceptance criterion.
 
+Treat a settled worker as disposable once its durable report has been consumed and there is no concrete reason to send that same worker a follow-up. Do not keep workers or worktrees merely because a later task is related; spawn a fresh bounded worker for new ownership. Clean disposable workers at the earliest safe point supported by the CLI. Preview cleanup first, and defer cleanup when it would also remove active workers, unharvested commits, or a worker needed for an accepted fix pass.
+
 ## 4. PR and merge gate
 
 Require final reports to identify branch, commit SHA, checks, proof, blockers, and PR URL when a PR is requested. Use `gh` to inspect PR metadata and checks, but delegate source/check-log investigation to a worker.
