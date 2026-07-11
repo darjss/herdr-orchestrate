@@ -1,12 +1,12 @@
 ---
-name: god-mode
+name: orchestrate
 description: Run a user-directed task through visible Pi workers with herdr-orchestrate.
 disable-model-invocation: true
 license: MIT
 compatibility: Requires Pi inside Herdr, Node.js, Git, the linked herdr-orchestrate plugin, and gh for PR operations.
 ---
 
-# God mode
+# Orchestrate
 
 This current user-facing Pi session is the **god session**. Keep decisions and user communication here; delegate repository investigation and delivery to visible Pi workers. Never spawn a god worker.
 

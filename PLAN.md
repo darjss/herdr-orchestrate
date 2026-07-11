@@ -41,7 +41,7 @@
 - Validate worker recovery, model routing, prompt delivery, board state, workspace isolation, background wait, PR creation, and merge approval.
 - Commit built plugin artifacts, tag a release, and document `herdr plugin install darjss/herdr-orchestrate`.
 
-## 7. God Skill (last)
+## 7. Orchestrate Skill (last)
 
-- Write the user-invoked `god-mode` skill only after the CLI and plugin contract are stable.
+- Write the user-invoked `orchestrate` skill only after the CLI and plugin contract are stable.
 - Encode Pi background waiting, the two worker routes, model selection, user-intent shaping, and the no-direct-inspection policy.
