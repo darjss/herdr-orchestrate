@@ -78,11 +78,22 @@ Do not advance while the current gate is blocked, missing its report, or lacks e
 
 Treat a settled worker as disposable once its durable report has been consumed and there is no concrete reason to send that same worker a follow-up. Do not keep workers or worktrees merely because a later task is related; spawn a fresh bounded worker for new ownership. Clean disposable workers at the earliest safe point supported by the CLI. Preview cleanup first, and defer cleanup when it would also remove active workers, unharvested commits, or a worker needed for an accepted fix pass.
 
-## 4. PR and merge gate
+## 4. PR, review, and merge gate
 
-Require final reports to identify branch, commit SHA, checks, proof, blockers, and PR URL when a PR is requested. Use `gh` to inspect PR metadata and checks, but delegate source/check-log investigation to a worker.
+For most feature and product changes, prefer a **PR-first review loop** after the author has committed and run baseline checks:
 
-Never merge without explicit user approval in this conversation. Present the PR, review verdict, green checks, live proof, and remaining risks; ask for approval. Only after an unambiguous approval may the god session run `gh pr merge`. Do not infer approval from the original task or silence.
+1. Push the integration branch and open a draft PR against the intended base.
+2. Spawn the required internal review against the PR head SHA.
+3. Send accepted findings to the existing author and push fixes to the same PR.
+4. Re-run affected checks and live proof against the updated head.
+5. After the internal review is resolved, inspect repository review-bot feedback and send valid findings through the same fix loop.
+6. Mark the PR ready only when review findings, checks, and proof are resolved.
+
+Keep parallel implementation commits traceable inside one integration PR when they deliver one coherent outcome. Use separate PRs when slices need independent rollout, reversion, ownership, or review. Skip the PR-first loop only when the user does not want a PR, the repository workflow forbids it, or the work is a local/non-delivery artifact.
+
+Require final reports to identify branch, commit SHA, checks, proof, blockers, and PR URL. Use `gh` to inspect PR metadata, review threads, and checks, but delegate source/check-log investigation to a worker.
+
+Never merge without explicit user approval in this conversation. Present the PR, review verdict, green checks, live proof, bot-review status, and remaining risks; ask for approval. Only after an unambiguous approval may the god session run `gh pr merge`. Do not infer approval from the original task or silence.
 
 This step is complete when the user-approved PR is merged, or when the user explicitly chooses to stop before merge.
 
