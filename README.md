@@ -31,10 +31,11 @@ herdr plugin link .
 pi install /absolute/path/to/herdr-orchestrate
 ```
 
-Restart Pi after installing so it discovers the packaged skills. Invoke the user-only orchestrator with:
+Restart Pi after installing so it discovers the packaged skills. Invoke the user-only orchestrator with either packaged alias:
 
 ```text
 /skill:god-mode
+/skill:orchestrate
 ```
 
 The skill uses the v2 `orch` command from PATH. If PATH resolution is unavailable, use the direct-node fallback shown below.
