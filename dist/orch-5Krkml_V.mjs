@@ -41,11 +41,20 @@ async function run(command, args, cwd) {
 		}) : reject(/* @__PURE__ */ new Error(`${command} ${args.join(" ")} exited ${code}: ${stderr || stdout}`)));
 	});
 }
+const THINKING_LEVELS = [
+	"low",
+	"medium",
+	"high",
+	"xhigh"
+];
+function isThinkingLevel(value) {
+	return THINKING_LEVELS.includes(value);
+}
 const MODEL_ROUTES = {
 	default: {
 		provider: "openai-codex",
-		model: "gpt-5.6-luna",
-		thinking: "xhigh",
+		model: "gpt-5.6-sol",
+		thinking: "medium",
 		writesSource: true,
 		decides: true
 	},
@@ -189,9 +198,9 @@ async function startRun(input) {
 	return state;
 }
 async function spawnWorker(input) {
+	const model = modelForWorker(input.route, input.thinking);
 	const state = await loadRun(input.repoRoot, input.runId);
 	if (state.workers[input.id]) throw new Error(`Worker '${input.id}' already exists.`);
-	const model = MODEL_ROUTES[input.route];
 	const root = runRoot(state.repoRoot, state.id);
 	const worktreePath = join(root, "worktrees", input.id);
 	const promptPath = join(root, "prompts", `${input.id}-pass-1.md`);
@@ -284,6 +293,16 @@ async function spawnWorker(input) {
 		await saveRun(state);
 		throw error;
 	}
+}
+function modelForWorker(route, thinking) {
+	const base = MODEL_ROUTES[route];
+	if (!base) throw new Error(`Unknown worker route '${route}'.`);
+	if (thinking !== void 0 && !isThinkingLevel(thinking)) throw new Error("--thinking must be low, medium, high, or xhigh.");
+	if (route === "explore" && thinking !== void 0 && thinking !== "high") throw new Error("Explore workers only support --thinking high.");
+	return {
+		...base,
+		thinking: thinking ?? base.thinking
+	};
 }
 async function sendWorker(input) {
 	const state = await loadRun(input.repoRoot, input.runId);
@@ -394,9 +413,9 @@ async function doctor(cwd) {
 			"--provider",
 			"openai-codex",
 			"--model",
-			"gpt-5.6-luna",
+			"gpt-5.6-sol",
 			"--thinking",
-			"xhigh",
+			"medium",
 			"--no-tools",
 			"--no-session",
 			"--print",
@@ -548,4 +567,4 @@ async function latestRun(cwd) {
 	return loadRun(repoRoot, entries.sort().at(-1));
 }
 //#endregion
-export { reconcileRun as a, startRun as c, orch_exports as i, MODEL_ROUTES as l, doctor as n, sendWorker as o, latestRun as r, spawnWorker as s, board as t, loadRun as u };
+export { reconcileRun as a, startRun as c, isThinkingLevel as d, loadRun as f, orch_exports as i, MODEL_ROUTES as l, doctor as n, sendWorker as o, latestRun as r, spawnWorker as s, board as t, THINKING_LEVELS as u };
