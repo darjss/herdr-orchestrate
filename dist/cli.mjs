@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, d as isThinkingLevel, f as loadRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board } from "./orch-DmBbkXaT.mjs";
+import { a as reconcileRun, c as startRun, d as isThinkingLevel, f as loadRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board } from "./orch-CBLt0E7m.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
 	throw new Error(`Usage:
   orch doctor
   orch run start <goal> [--size trivial|normal|complex] [--base REF]
-  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
+  orch worker spawn <id> --route default|fast|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
   orch cleanup [--run RUN] [--apply] [--force]
@@ -66,7 +66,11 @@ async function main() {
 		const prompt = option(args, "--prompt");
 		const runId = option(args, "--run");
 		const thinking = option(args, "--thinking");
-		if (!id || !route || !prompt || !runId || !["default", "explore"].includes(route)) usage();
+		if (!id || !route || !prompt || !runId || ![
+			"default",
+			"fast",
+			"explore"
+		].includes(route)) usage();
 		if (thinking !== void 0 && !isThinkingLevel(thinking)) throw new Error("--thinking must be low, medium, high, or xhigh.");
 		if (route === "explore" && thinking !== void 0 && thinking !== "high") throw new Error("Explore workers only support --thinking high.");
 		const worker = await spawnWorker({
@@ -127,7 +131,7 @@ async function main() {
 		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-DmBbkXaT.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-CBLt0E7m.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({

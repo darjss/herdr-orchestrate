@@ -1,5 +1,5 @@
 //#region src/state.d.ts
-type Route = "default" | "explore";
+type Route = "default" | "fast" | "explore";
 type TaskSize = "trivial" | "normal" | "complex";
 declare const THINKING_LEVELS: readonly ["low", "medium", "high", "xhigh"];
 type ThinkingLevel = (typeof THINKING_LEVELS)[number];

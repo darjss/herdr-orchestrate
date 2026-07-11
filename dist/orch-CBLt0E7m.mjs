@@ -58,6 +58,13 @@ const MODEL_ROUTES = {
 		writesSource: true,
 		decides: true
 	},
+	fast: {
+		provider: "openai-codex",
+		model: "gpt-5.6-luna",
+		thinking: "medium",
+		writesSource: true,
+		decides: true
+	},
 	explore: {
 		provider: "opencode-go",
 		model: "deepseek-v4-flash",

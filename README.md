@@ -6,14 +6,17 @@ Pi-native orchestration for visible [Herdr](https://herdr.dev) worker sessions.
 
 ## Model routes
 
-| Route     | Provider/model                  | Thinking | Contract                                            |
-| --------- | ------------------------------- | -------- | --------------------------------------------------- |
-| `default` | `openai-codex/gpt-5.6-sol`      | `medium` | Planning, implementation, review, and proof         |
-| `explore` | `opencode-go/deepseek-v4-flash` | `high`   | Input-heavy exploration only; no edits or decisions |
+| Route     | Provider/model                  | Thinking | Contract                                                |
+| --------- | ------------------------------- | -------- | ------------------------------------------------------- |
+| `default` | `openai-codex/gpt-5.6-sol`      | `medium` | Ambiguous, complex, high-risk, or quality-critical work |
+| `fast`    | `openai-codex/gpt-5.6-luna`     | `medium` | Bounded, low-risk work with clear acceptance criteria   |
+| `explore` | `opencode-go/deepseek-v4-flash` | `high`   | Input-heavy exploration only; no edits or decisions     |
 
 The current user-facing Pi session is the god agent. The CLI never spawns a god worker.
 
-Default-route workers accept an optional `--thinking low|medium|high|xhigh` override. The selected level is persisted with the worker and passed to Pi; explore workers remain at high and reject non-high overrides.
+Default and fast workers accept an optional `--thinking low|medium|high|xhigh` override. The selected level is persisted with the worker and passed to Pi; explore workers remain at high and reject non-high overrides.
+
+The fast route is based on Luna's strong cost/capability tradeoff, not parity with Sol. On [Datacurve DeepSWE v1.1](https://deepswe.datacurve.ai/blog/deepswe-v1-1), Luna at `max` scored 67.2% at an estimated $3.03 per task, versus Sol's 72.7% at $8.39. Those results use `max` reasoning; the route keeps `medium` as its balanced default and reserves Sol for work where the remaining quality gap matters.
 
 ## Install from GitHub
 
@@ -48,6 +51,8 @@ Use the v2 CLI from PATH:
 ```bash
 orch doctor
 orch run start "describe the task" --size normal
+orch worker spawn routine-fix \
+  --route fast --thinking medium --prompt brief.md --run <run-id>
 orch worker spawn research \
   --route default --thinking medium --prompt brief.md --run <run-id>
 orch worker spawn review \
@@ -72,7 +77,7 @@ Run `wait` through Pi's background-command tool. That lets Pi end its current tu
 
 Task size provides dynamic workflow guidance, not an enforced fixed state machine. Trivial tasks often need implementation and proof, normal tasks often benefit from research, implementation, review, and proof, and complex tasks may need an explicit architecture decision first. The god session may omit, repeat, or parallelize stages based on user intent and evidence; `orch` does not automate those stages.
 
-Before each default-route spawn, choose thinking from task risk: `low` for trivial bounded low-risk tasks, `medium` for routine work, `high` for difficult debugging, security, or architecture work, and `xhigh` only for explicit escalation. Workers do not choose their level after launch.
+Choose `fast` for bounded, low-risk work with clear acceptance criteria. Choose `default` for ambiguity, architecture, security, difficult debugging, and quality-critical review. Before each coding-route spawn, choose thinking from task risk: `low` for trivial bounded work, `medium` for routine work, `high` for difficult work, and `xhigh` only for explicit escalation. Workers do not choose their level after launch.
 
 Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 

@@ -15,7 +15,7 @@ function usage(): never {
   throw new Error(`Usage:
   orch doctor
   orch run start <goal> [--size trivial|normal|complex] [--base REF]
-  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
+  orch worker spawn <id> --route default|fast|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
   orch cleanup [--run RUN] [--apply] [--force]
@@ -85,7 +85,8 @@ async function main(): Promise<void> {
     const prompt = option(args, "--prompt");
     const runId = option(args, "--run");
     const thinking = option(args, "--thinking");
-    if (!id || !route || !prompt || !runId || !["default", "explore"].includes(route)) usage();
+    if (!id || !route || !prompt || !runId || !["default", "fast", "explore"].includes(route))
+      usage();
     if (thinking !== undefined && !isThinkingLevel(thinking))
       throw new Error("--thinking must be low, medium, high, or xhigh.");
     if (route === "explore" && thinking !== undefined && thinking !== "high")

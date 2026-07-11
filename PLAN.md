@@ -11,7 +11,8 @@
 
 - Launch isolated Git worktrees and visible Herdr panes.
 - Route every worker explicitly through Pi:
-  - Sol low/medium/high/xhigh: default planning, implementation, review, and proof route; choose before spawn by task risk, with xhigh only for explicit escalation.
+  - Sol low/medium/high/xhigh: default route for ambiguous, complex, high-risk, or quality-critical planning, implementation, review, and proof.
+  - Luna low/medium/high/xhigh: fast route for bounded, low-risk work with clear acceptance criteria.
   - OpenCode Go DeepSeek V4 Flash at high: input-heavy exploration only; no edits or decisions.
 - Persist the selected provider, model, and thinking level with each worker.
 

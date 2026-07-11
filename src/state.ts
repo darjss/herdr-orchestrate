@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 
 export const SCHEMA_VERSION = 2;
-export type Route = "default" | "explore";
+export type Route = "default" | "fast" | "explore";
 export type TaskSize = "trivial" | "normal" | "complex";
 export const THINKING_LEVELS = ["low", "medium", "high", "xhigh"] as const;
 export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
@@ -25,6 +25,13 @@ export const MODEL_ROUTES: Record<Route, ModelRoute> = {
   default: {
     provider: "openai-codex",
     model: "gpt-5.6-sol",
+    thinking: "medium",
+    writesSource: true,
+    decides: true,
+  },
+  fast: {
+    provider: "openai-codex",
+    model: "gpt-5.6-luna",
     thinking: "medium",
     writesSource: true,
     decides: true,

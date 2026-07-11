@@ -33,7 +33,17 @@ Confirm `HERDR_ENV=1`, identify the target Git repository with a simple Git comm
 
 Based on user intent and evidence, omit, repeat, or parallelize stages as appropriate. `orch` provides worker lifecycle primitives; it does not automate this workflow.
 
-Use an explore worker only for input-heavy fact gathering. Explore uses `opencode-go/deepseek-v4-flash` at `high` and may not edit or decide. Every planning, implementation, review, and proof worker uses the default `openai-codex/gpt-5.6-sol` route. Before each default-route spawn, choose `--thinking` based on task risk: `low` for trivial bounded low-risk tasks, `medium` for routine work, `high` for difficult debugging, security, or architecture work, and `xhigh` only when the god/user explicitly escalates. The worker does not choose or change thinking after launch; the selected level must be supplied at spawn time. Explore remains high and rejects non-high overrides.
+Use an explore worker only for input-heavy fact gathering. Explore uses `opencode-go/deepseek-v4-flash` at `high` and may not edit or decide.
+
+For planning, implementation, review, and proof, route by risk:
+
+- Use `fast` (`openai-codex/gpt-5.6-luna`) for bounded, low-risk work with clear acceptance criteria, such as small fixes, routine transformations, and straightforward proof.
+- Use `default` (`openai-codex/gpt-5.6-sol`) when the task is ambiguous, complex, architectural, security-sensitive, difficult to debug, or quality-critical.
+- Escalate from fast to default when a Luna worker reports uncertainty or fails a gate; do not repeatedly spend passes on the cheaper route when the work needs more capability.
+
+This routing reflects Datacurve DeepSWE v1.1: Luna at `max` scored 67.2% at an estimated $3.03 per task, while Sol scored 72.7% at $8.39. Treat that as evidence of Luna's cost/capability tradeoff, not parity at the router's default `medium` reasoning.
+
+Before each coding-route spawn, choose `--thinking` based on task risk: `low` for trivial bounded low-risk tasks, `medium` for routine work, `high` for difficult work, and `xhigh` only when the god/user explicitly escalates. The worker does not choose or change thinking after launch; the selected level must be supplied at spawn time. Explore remains high and rejects non-high overrides.
 
 Start one run with `run start`, retain its run ID, and use that ID explicitly thereafter. The CLI reuses the project's persistent orchestration workspace and board. This step is complete when `board --run <id>` shows the intended goal, size, and no unintended workers.
 
@@ -44,7 +54,7 @@ Read [`references/briefs.md`](references/briefs.md) when drafting any worker bri
 Spawn with:
 
 ```text
-worker spawn <id> --route <default|explore> --prompt <file> --run <run-id> [--thinking <low|medium|high|xhigh>] [--base <ref-or-sha>]
+worker spawn <id> --route <default|fast|explore> --prompt <file> --run <run-id> [--thinking <low|medium|high|xhigh>] [--base <ref-or-sha>]
 ```
 
 Review and proof workers must use `--base <implementation-sha>` so they inspect the delivered code, not the run's original base. Parallelize only independent read-only work or disjoint implementation ownership.
