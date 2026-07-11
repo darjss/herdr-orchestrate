@@ -1,11 +1,13 @@
 //#region src/state.d.ts
 type Route = "default" | "explore";
 type TaskSize = "trivial" | "normal" | "complex";
+declare const THINKING_LEVELS: readonly ["low", "medium", "high", "xhigh"];
+type ThinkingLevel = (typeof THINKING_LEVELS)[number];
 type WorkerStatus = "staged" | "launching" | "working" | "blocked" | "done" | "failed";
 interface ModelRoute {
   provider: string;
   model: string;
-  thinking: "high" | "xhigh";
+  thinking: ThinkingLevel;
   writesSource: boolean;
   decides: boolean;
 }
@@ -58,6 +60,7 @@ declare function spawnWorker(input: {
   id: string;
   route: Route;
   prompt: string;
+  thinking?: ThinkingLevel;
   baseRef?: string;
 }): Promise<Worker>;
 declare function sendWorker(input: {
@@ -72,4 +75,4 @@ declare function reconcileRun(repoRoot: string, runId: string): Promise<RunState
 declare function board(state: RunState): string;
 declare function latestRun(cwd: string): Promise<RunState>;
 //#endregion
-export { MODEL_ROUTES, type ModelRoute, type Route, type RunState, type TaskSize, type Worker, board, doctor, latestRun, reconcileRun, sendWorker, spawnWorker, startRun };
+export { MODEL_ROUTES, type ModelRoute, type Route, type RunState, THINKING_LEVELS, type TaskSize, type ThinkingLevel, type Worker, board, doctor, latestRun, reconcileRun, sendWorker, spawnWorker, startRun };

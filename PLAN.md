@@ -11,9 +11,8 @@
 
 - Launch isolated Git worktrees and visible Herdr panes.
 - Route every worker explicitly through Pi:
-  - Sol high/max: god decisions and explicit escalations.
-  - Luna xhigh: research/plan, implementation, review, and proof.
-  - OpenCode Go DeepSeek V4 Flash: input-heavy exploration only; no edits or decisions.
+  - Sol low/medium/high/xhigh: default planning, implementation, review, and proof route; choose before spawn by task risk, with xhigh only for explicit escalation.
+  - OpenCode Go DeepSeek V4 Flash at high: input-heavy exploration only; no edits or decisions.
 - Persist the selected provider, model, and thinking level with each worker.
 
 ## 3. Run Lifecycle

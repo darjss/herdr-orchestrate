@@ -14,7 +14,7 @@ The assigned brief is authoritative. It states the role, route, scope, constrain
 Read the brief and repository instructions before investigating.
 
 - **Explore route** (`opencode-go/deepseek-v4-flash`): gather facts only. Do not edit files, run Git write commands, make architecture/product decisions, or present a preference as settled. Separate observations from options requiring a decision.
-- **Research/plan route** (`openai-codex/gpt-5.6-luna`): investigate evidence, resolve low-risk technical choices, and recommend a concrete plan. Do not edit source unless the brief explicitly changes the role.
+- **Research/plan route** (`openai-codex/gpt-5.6-sol`): investigate evidence, resolve low-risk technical choices, and recommend a concrete plan. The orchestrator selects thinking before spawn; do not choose or change it after launch. Do not edit source unless the brief explicitly changes the role.
 
 This step is complete when the lane and every explicit question in the brief are listed in working notes.
 

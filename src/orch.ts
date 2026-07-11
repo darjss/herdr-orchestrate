@@ -9,10 +9,13 @@ import {
   projectRoot,
   runRoot,
   saveRun,
+  type ModelRoute,
   type Route,
   type RunState,
   type TaskSize,
+  type ThinkingLevel,
   type Worker,
+  isThinkingLevel,
 } from "./state.js";
 
 export async function repositoryRoot(cwd: string): Promise<string> {
@@ -80,11 +83,12 @@ export async function spawnWorker(input: {
   id: string;
   route: Route;
   prompt: string;
+  thinking?: ThinkingLevel;
   baseRef?: string;
 }): Promise<Worker> {
+  const model = modelForWorker(input.route, input.thinking);
   const state = await loadRun(input.repoRoot, input.runId);
   if (state.workers[input.id]) throw new Error(`Worker '${input.id}' already exists.`);
-  const model = MODEL_ROUTES[input.route];
   const root = runRoot(state.repoRoot, state.id);
   const worktreePath = join(root, "worktrees", input.id);
   const promptPath = join(root, "prompts", `${input.id}-pass-1.md`);
@@ -166,6 +170,16 @@ export async function spawnWorker(input: {
     await saveRun(state);
     throw error;
   }
+}
+
+function modelForWorker(route: Route, thinking?: ThinkingLevel): ModelRoute {
+  const base = MODEL_ROUTES[route];
+  if (!base) throw new Error(`Unknown worker route '${route}'.`);
+  if (thinking !== undefined && !isThinkingLevel(thinking))
+    throw new Error("--thinking must be low, medium, high, or xhigh.");
+  if (route === "explore" && thinking !== undefined && thinking !== "high")
+    throw new Error("Explore workers only support --thinking high.");
+  return { ...base, thinking: thinking ?? base.thinking };
 }
 
 export async function sendWorker(input: {
@@ -258,9 +272,9 @@ export async function doctor(cwd: string): Promise<string[]> {
         "--provider",
         "openai-codex",
         "--model",
-        "gpt-5.6-luna",
+        "gpt-5.6-sol",
         "--thinking",
-        "xhigh",
+        "medium",
         "--no-tools",
         "--no-session",
         "--print",

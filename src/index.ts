@@ -9,8 +9,10 @@ export {
 } from "./orch.js";
 export {
   MODEL_ROUTES,
+  THINKING_LEVELS,
   type ModelRoute,
   type Route,
+  type ThinkingLevel,
   type RunState,
   type TaskSize,
   type Worker,

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board, u as loadRun } from "./orch-E68Gqc2m.mjs";
+import { a as reconcileRun, c as startRun, d as isThinkingLevel, f as loadRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board } from "./orch-5Krkml_V.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
 	throw new Error(`Usage:
   orch doctor
   orch run start <goal> [--size trivial|normal|complex] [--base REF]
-  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--base REF]
+  orch worker spawn <id> --route default|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
   orch cleanup [--run RUN] [--apply] [--force]
@@ -65,13 +65,17 @@ async function main() {
 		const route = option(args, "--route");
 		const prompt = option(args, "--prompt");
 		const runId = option(args, "--run");
+		const thinking = option(args, "--thinking");
 		if (!id || !route || !prompt || !runId || !["default", "explore"].includes(route)) usage();
+		if (thinking !== void 0 && !isThinkingLevel(thinking)) throw new Error("--thinking must be low, medium, high, or xhigh.");
+		if (route === "explore" && thinking !== void 0 && thinking !== "high") throw new Error("Explore workers only support --thinking high.");
 		const worker = await spawnWorker({
 			repoRoot: (await latestRun(cwd)).repoRoot,
 			runId,
 			id,
 			route,
 			prompt,
+			thinking,
 			baseRef: option(args, "--base")
 		});
 		console.log(`Started ${worker.id} as ${worker.model.provider}/${worker.model.model}`);
@@ -123,7 +127,7 @@ async function main() {
 		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-E68Gqc2m.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-5Krkml_V.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({

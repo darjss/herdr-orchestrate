@@ -5,21 +5,27 @@ import { join, resolve } from "node:path";
 export const SCHEMA_VERSION = 2;
 export type Route = "default" | "explore";
 export type TaskSize = "trivial" | "normal" | "complex";
+export const THINKING_LEVELS = ["low", "medium", "high", "xhigh"] as const;
+export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
 export type WorkerStatus = "staged" | "launching" | "working" | "blocked" | "done" | "failed";
 
 export interface ModelRoute {
   provider: string;
   model: string;
-  thinking: "high" | "xhigh";
+  thinking: ThinkingLevel;
   writesSource: boolean;
   decides: boolean;
+}
+
+export function isThinkingLevel(value: unknown): value is ThinkingLevel {
+  return THINKING_LEVELS.includes(value as ThinkingLevel);
 }
 
 export const MODEL_ROUTES: Record<Route, ModelRoute> = {
   default: {
     provider: "openai-codex",
-    model: "gpt-5.6-luna",
-    thinking: "xhigh",
+    model: "gpt-5.6-sol",
+    thinking: "medium",
     writesSource: true,
     decides: true,
   },
