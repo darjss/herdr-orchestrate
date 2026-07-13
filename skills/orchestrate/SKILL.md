@@ -33,17 +33,14 @@ Confirm `HERDR_ENV=1`, identify the target Git repository with a simple Git comm
 
 Based on user intent and evidence, omit, repeat, or parallelize stages as appropriate. `orch` provides worker lifecycle primitives; it does not automate this workflow.
 
-Use an explore worker only for input-heavy fact gathering. Explore uses `opencode-go/deepseek-v4-flash` at `high` and may not edit or decide.
+Read [`references/routing.md`](references/routing.md) before spawning workers. Use its **scout → analyst → author → reviewer** pipeline:
 
-For planning, implementation, review, and proof, route by risk:
+- DeepSeek `explore` workers are scouts: they map relevant files and evidence only.
+- GPT-5.6 Luna `fast` workers are the default analysts, authors, and proof workers.
+- GPT-5.6 Sol `default` workers handle consequential decisions and quality-critical review.
+- `medium` is the recommended thinking level for both coding routes. Use `high` only after an evidence-backed medium escalation or an explicit user request, and write the reason in the brief.
 
-- Use `fast` (`openai-codex/gpt-5.6-luna`) for bounded, low-risk work with clear acceptance criteria, such as small fixes, routine transformations, and straightforward proof.
-- Use `default` (`openai-codex/gpt-5.6-sol`) when the task is ambiguous, complex, architectural, security-sensitive, difficult to debug, or quality-critical.
-- Escalate from fast to default when a Luna worker reports uncertainty or fails a gate; do not repeatedly spend passes on the cheaper route when the work needs more capability.
-
-This routing reflects Datacurve DeepSWE v1.1: Luna at `max` scored 67.2% at an estimated $3.03 per task, while Sol scored 72.7% at $8.39. Treat that as evidence of Luna's cost/capability tradeoff, not parity at the router's default `medium` reasoning.
-
-Before each coding-route spawn, choose `--thinking` based on task risk: `low` for trivial bounded low-risk tasks, `medium` for routine work, `high` for difficult work, and `xhigh` only when the god/user explicitly escalates. The worker does not choose or change thinking after launch; the selected level must be supplied at spawn time. Explore remains high and rejects non-high overrides.
+Workers never spawn nested workers. A Luna worker that needs broad file discovery returns the routing reference's `Scout request`; the god session spawns DeepSeek scouts and sends their report paths back to Luna.
 
 Start one run with `run start`, retain its run ID, and use that ID explicitly thereafter. The CLI reuses the project's persistent orchestration workspace and board. This step is complete when `board --run <id>` shows the intended goal, size, and no unintended workers.
 
@@ -62,6 +59,8 @@ Review and proof workers must use `--base <implementation-sha>` so they inspect 
 Prefer a **fan-out/fan-in** gate over assigning one broad task to one worker. Before spawning, split the gate by independent system, issue, user path, or evidence source; run those workers in parallel, then synthesize their durable reports before the next gate. Keep each brief bounded enough that one worker can produce deep evidence for one concern. Use a single broad worker only when the work is inherently coupled, splitting would duplicate most investigation, or concurrent writers would overlap. Parallel implementation requires disjoint ownership; read-only research, review, and proof should be parallelized whenever their scopes can be separated.
 
 Immediately run `wait --run <id>` through Pi's `bg_command` tool. Never foreground the wait and never use shell `&`: the background tool is what wakes the god session when workers settle.
+
+If a Luna report ends `orch-verdict: blocked scout evidence needed`, spawn the requested DeepSeek scouts, wait for their fact-only reports, then send the report paths back to the same Luna worker.
 
 This step is complete when the board reports the worker settled and its durable report ends in `orch-verdict: done` or identifies a precise blocker.
 

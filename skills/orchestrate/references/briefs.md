@@ -7,10 +7,10 @@ Replace every `<placeholder>`. Keep one role per worker.
 ```md
 You are an orch EXPLORE worker on the explore route. Use the orch-research-plan-worker skill.
 
-Question: <bounded input-heavy question>
-Scope: <directories/systems>
-Constraints: Do not edit files, run Git write commands, or make architecture/product decisions.
-Deliver: evidence, relevant files/interfaces, options with tradeoffs, unknowns requiring a coding-route worker or user decision.
+Question: <bounded factual question>
+Scope: <directories, symbols, or evidence sources>
+Constraints: Do not edit files, run Git write commands, produce findings, assign severity or priority, recommend fixes, compare preferred options, or make architecture/product/security decisions.
+Deliver: every requested scope mapped to relevant files and symbols; caller/import/config relationships with paths and line references; exact factual evidence; commands or documents that define observed behavior; unknowns requiring an analyst or user decision.
 ```
 
 ## Research and plan
@@ -20,9 +20,10 @@ You are an orch RESEARCH/PLAN worker on the <default|fast> route. Use the orch-r
 
 Goal: <user outcome>
 Scope: <areas to investigate>
+Scout reports: <durable report paths, or none>
 Known constraints: <constraints>
 Questions to resolve: <questions>
-Deliver: evidence-backed recommendation, implementation slices, risks, exact acceptance criteria, and validation commands. Escalate consequential ambiguity.
+Deliver: evidence-backed recommendation, implementation slices, risks, exact acceptance criteria, and validation commands. Escalate consequential ambiguity. If broad file mapping is still required, do not attempt nested orchestration; return `## Scout request` with a bounded factual question, scope, and needed evidence.
 ```
 
 ## Implement or fix

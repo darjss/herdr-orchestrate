@@ -13,8 +13,10 @@ The assigned brief is authoritative. It states the role, route, scope, constrain
 
 Read the brief and repository instructions before investigating.
 
-- **Explore route** (`opencode-go/deepseek-v4-flash`): gather facts only. Do not edit files, run Git write commands, make architecture/product decisions, or present a preference as settled. Separate observations from options requiring a decision.
-- **Research/plan route** (`openai-codex/gpt-5.6-sol` on default or `openai-codex/gpt-5.6-luna` on fast): investigate evidence, resolve low-risk technical choices, and recommend a concrete plan within the brief's risk boundary. The orchestrator selects the route and thinking before spawn; do not choose or change either after launch. Do not edit source unless the brief explicitly changes the role.
+- **Explore route** (`opencode-go/deepseek-v4-flash`): act as a scout. Map relevant files, symbols, callers, configuration, and exact evidence. Do not edit, produce findings, assign severity or priority, recommend fixes, compare preferred options, or make architecture/product/security decisions.
+- **Research/plan route** (`openai-codex/gpt-5.6-luna` on fast or `openai-codex/gpt-5.6-sol` on default): act as an analyst. Verify decisive evidence, resolve choices within the brief's risk boundary, and recommend a concrete plan. Luna is the default analyst; Sol is reserved for consequential decisions and quality-critical review. The orchestrator selects route and thinking before spawn; `medium` is the normal coding-route level. Do not choose or change either after launch. Do not edit source unless the brief explicitly changes the role.
+
+Workers never start nested workers. If an analyst needs broad file discovery that the brief or supplied scout reports do not provide, report a bounded scout request instead of searching every subsystem itself.
 
 This step is complete when the lane and every explicit question in the brief are listed in working notes.
 
@@ -24,7 +26,19 @@ Inspect the smallest sufficient surface, then trace dependencies and repository 
 
 Do not inflate the plan with speculative infrastructure or unrelated cleanup. Escalate genuine architecture, product, security, or destructive choices instead of silently choosing them.
 
-This step is complete when every brief question has evidence, every recommendation names its tradeoff, and an implementer could proceed without repeating the investigation.
+For a missing input map, write:
+
+```md
+## Scout request
+
+- Question: <bounded factual question>
+- Scope: <directories, symbols, or evidence sources>
+- Needed evidence: <facts required before analysis can continue>
+```
+
+then end the report with `orch-verdict: blocked scout evidence needed`. The god session will spawn scouts and send their report paths back to this worker.
+
+This step is complete when every brief question has evidence, every recommendation names its tradeoff, and an implementer could proceed without repeating the investigation—or when a precise scout request identifies the missing evidence.
 
 ## 3. Report
 

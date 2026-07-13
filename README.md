@@ -6,17 +6,17 @@ Pi-native orchestration for visible [Herdr](https://herdr.dev) worker sessions.
 
 ## Model routes
 
-| Route     | Provider/model                  | Thinking | Contract                                                |
-| --------- | ------------------------------- | -------- | ------------------------------------------------------- |
-| `default` | `openai-codex/gpt-5.6-sol`      | `medium` | Ambiguous, complex, high-risk, or quality-critical work |
-| `fast`    | `openai-codex/gpt-5.6-luna`     | `medium` | Bounded, low-risk work with clear acceptance criteria   |
-| `explore` | `opencode-go/deepseek-v4-flash` | `high`   | Input-heavy exploration only; no edits or decisions     |
+| Route     | Provider/model                  | Thinking | Contract                                                   |
+| --------- | ------------------------------- | -------- | ---------------------------------------------------------- |
+| `default` | `openai-codex/gpt-5.6-sol`      | `medium` | Consequential decisions and quality-critical review        |
+| `fast`    | `openai-codex/gpt-5.6-luna`     | `medium` | Default research, planning, implementation, and proof      |
+| `explore` | `opencode-go/deepseek-v4-flash` | `high`   | Fact-only file/evidence scouting; no findings or decisions |
 
 The current user-facing Pi session is the god agent. The CLI never spawns a god worker.
 
-Default and fast workers accept an optional `--thinking low|medium|high|xhigh` override. The selected level is persisted with the worker and passed to Pi; explore workers remain at high and reject non-high overrides.
+Default and fast workers accept an optional `--thinking low|medium|high|xhigh` override. `medium` is recommended for most work on both routes. Use `high` only after an evidence-backed medium escalation or an explicit user request; reserve `xhigh` for explicit user escalation. The selected level is persisted with the worker and passed to Pi. Explore workers remain at high and reject non-high overrides.
 
-The fast route is based on Luna's strong cost/capability tradeoff, not parity with Sol. On [Datacurve DeepSWE v1.1](https://deepswe.datacurve.ai/blog/deepswe-v1-1), Luna at `max` scored 67.2% at an estimated $3.03 per task, versus Sol's 72.7% at $8.39. Those results use `max` reasoning; the route keeps `medium` as its balanced default and reserves Sol for work where the remaining quality gap matters.
+Use a **scout → analyst** flow for input-heavy research: DeepSeek scouts map files, symbols, callers, configuration, and exact evidence; Luna verifies the decisive evidence and makes recommendations. Workers do not spawn nested workers. A Luna analyst that needs more breadth returns a bounded scout request, and the god session spawns the scouts and sends their report paths back.
 
 ## Install from GitHub
 
@@ -77,7 +77,7 @@ Run `wait` through Pi's background-command tool. That lets Pi end its current tu
 
 Task size provides dynamic workflow guidance, not an enforced fixed state machine. Trivial tasks often need implementation and proof, normal tasks often benefit from research, implementation, review, and proof, and complex tasks may need an explicit architecture decision first. The god session may omit, repeat, or parallelize stages based on user intent and evidence; `orch` does not automate those stages.
 
-Choose `fast` for bounded, low-risk work with clear acceptance criteria. Choose `default` for ambiguity, architecture, security, difficult debugging, and quality-critical review. Before each coding-route spawn, choose thinking from task risk: `low` for trivial bounded work, `medium` for routine work, `high` for difficult work, and `xhigh` only for explicit escalation. Workers do not choose their level after launch.
+Choose `fast` Luna at `medium` for most research, planning, implementation, and proof. Choose `default` Sol at `medium` when the remaining choice is consequential, security-sensitive, architectural, difficult to debug, or quality-critical. Use `low` only for trivial bounded work. Escalate to `high` only with a stated evidence-backed reason or explicit user request, and to `xhigh` only on explicit user escalation. Workers do not choose their level after launch.
 
 Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 
