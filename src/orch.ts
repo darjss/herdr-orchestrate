@@ -407,15 +407,51 @@ export async function reconcileRun(repoRoot: string, runId: string): Promise<Run
   return state;
 }
 
+async function findWorkerInOtherRun(
+  repoRoot: string,
+  runId: string,
+  workerId: string,
+): Promise<string | undefined> {
+  const root = join(projectRoot(repoRoot), "runs");
+  let entries: string[];
+  try {
+    entries = await readdir(root);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+  for (const entry of entries) {
+    if (entry === runId) continue;
+    const candidate = await loadRun(repoRoot, entry).catch(() => null);
+    if (candidate?.workers[workerId]) return candidate.id;
+  }
+  return undefined;
+}
+
 export async function cleanupRun(input: {
   repoRoot: string;
   runId: string;
+  workerId?: string;
   apply: boolean;
   force: boolean;
 }): Promise<string[]> {
   const state = await loadRun(input.repoRoot, input.runId);
+  let workers = Object.values(state.workers);
+  if (input.workerId !== undefined) {
+    const worker = state.workers[input.workerId];
+    if (!worker) {
+      const otherRun = await findWorkerInOtherRun(input.repoRoot, state.id, input.workerId);
+      if (otherRun) {
+        throw new Error(
+          `Worker '${input.workerId}' belongs to run '${otherRun}', not '${state.id}'.`,
+        );
+      }
+      throw new Error(`Unknown worker '${input.workerId}' in run '${state.id}'.`);
+    }
+    workers = [worker];
+  }
   const lines: string[] = [];
-  for (const worker of Object.values(state.workers)) {
+  for (const worker of workers) {
     lines.push(`${input.apply ? "remove" : "would remove"} worktree ${worker.worktreePath}`);
     lines.push(`${input.apply ? "close" : "would close"} worker ${worker.agentName}`);
     if (!input.apply) continue;

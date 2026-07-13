@@ -62,7 +62,8 @@ orch worker send research \
 orch board --run <run-id>
 orch wait --run <run-id>
 orch cleanup --run <run-id>
-orch cleanup --run <run-id> --apply
+orch cleanup --run <run-id> --worker <worker-id>
+orch cleanup --run <run-id> --worker <worker-id> --apply
 ```
 
 For local development or when `orch` is not on PATH, use the direct-node fallback:
@@ -86,7 +87,7 @@ Durable state defaults to `~/dev/orch-v2`; override it with `ORCH_STATE_DIR`.
 - Each project reuses one persistent `<project>-orchestrate` workspace.
 - The board occupies the first root pane; each worker gets one tab with one root pane.
 - Workers use isolated worktrees and durable per-pass report paths.
-- Cleanup previews before applying, closes only worker tabs, and preserves the board workspace, branches, and reports.
+- Cleanup previews before applying, closes only worker tabs, and preserves the board workspace, branches, and reports. Pass `--worker <worker-id>` to target exactly one worker; without it, cleanup remains whole-run.
 - PR operations use `gh`; merging always requires explicit user approval.
 
 ## Development

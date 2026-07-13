@@ -18,7 +18,7 @@ function usage(): never {
   orch worker spawn <id> --route default|fast|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
-  orch cleanup [--run RUN] [--apply] [--force]
+  orch cleanup [--run RUN] [--worker WORKER] [--apply] [--force]
   orch board [--run RUN]`);
 }
 
@@ -166,6 +166,7 @@ async function main(): Promise<void> {
         await cleanupRun({
           repoRoot: state.repoRoot,
           runId: state.id,
+          workerId: option(args, "--worker"),
           apply: args.includes("--apply"),
           force: args.includes("--force"),
         })

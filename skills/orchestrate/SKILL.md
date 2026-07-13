@@ -98,6 +98,6 @@ This step is complete when the user-approved PR is merged, or when the user expl
 
 ## 5. Close the run
 
-Run cleanup preview first, verify it targets only this run's worker tabs/worktrees, then run cleanup apply. Cleanup closes worker tabs but keeps the project's board workspace available for the next run; it must preserve branches and durable prompts/reports. Report one concise table or list containing each worker's role, branch/SHA/PR, verdict, checks, proof, merge status, and any next action.
+Run cleanup preview first, verify it targets only this run's worker tabs/worktrees, then run cleanup apply. Use `orch cleanup --run <run-id> --worker <worker-id>` when disposing of one worker; omitting `--worker` retains whole-run cleanup. Cleanup closes worker tabs but keeps the project's board workspace available for the next run; it must preserve branches and durable prompts/reports. Report one concise table or list containing each worker's role, branch/SHA/PR, verdict, checks, proof, merge status, and any next action.
 
 The orchestration is complete only when every user requirement has report-backed evidence, required proof is live, merge state matches the user's decision, and disposable worker resources are cleaned up.

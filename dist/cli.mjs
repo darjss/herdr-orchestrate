@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as reconcileRun, c as startRun, d as isThinkingLevel, f as loadRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board } from "./orch-CBLt0E7m.mjs";
+import { a as reconcileRun, c as startRun, d as isThinkingLevel, f as loadRun, n as doctor, o as sendWorker, r as latestRun, s as spawnWorker, t as board } from "./orch-CaZpeeSF.mjs";
 import { existsSync } from "node:fs";
 //#region src/cli.ts
 function usage() {
@@ -9,7 +9,7 @@ function usage() {
   orch worker spawn <id> --route default|fast|explore --prompt FILE --run RUN [--thinking low|medium|high|xhigh] [--base REF]
   orch worker send <id> (--prompt FILE | --text TEXT) --run RUN
   orch wait [--run RUN] [--timeout SECONDS]
-  orch cleanup [--run RUN] [--apply] [--force]
+  orch cleanup [--run RUN] [--worker WORKER] [--apply] [--force]
   orch board [--run RUN]`);
 }
 function invocationCwd() {
@@ -131,12 +131,13 @@ async function main() {
 		return;
 	}
 	if (args[0] === "cleanup") {
-		const { cleanupRun } = await import("./orch-CBLt0E7m.mjs").then((n) => n.i);
+		const { cleanupRun } = await import("./orch-CaZpeeSF.mjs").then((n) => n.i);
 		const selected = option(args, "--run");
 		const state = selected ? await loadRun((await latestRun(cwd)).repoRoot, selected) : await latestRun(cwd);
 		console.log((await cleanupRun({
 			repoRoot: state.repoRoot,
 			runId: state.id,
+			workerId: option(args, "--worker"),
 			apply: args.includes("--apply"),
 			force: args.includes("--force")
 		})).join("\n"));
