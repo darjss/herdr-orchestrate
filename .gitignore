@@ -1,4 +1,8 @@
 node_modules
-dist
+dist/
+dist/*
+!dist/
+!dist/*.mjs
+!dist/*.mts
 *.log
 .DS_Store
